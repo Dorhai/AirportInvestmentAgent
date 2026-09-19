@@ -1,0 +1,105 @@
+---
+description: Core architectural and AI safety rules for AirportIQ.
+alwaysApply: true
+---
+
+# AirportIQ Core Architecture
+
+## Source of Truth
+
+Python and verified aviation data are the source of truth.
+
+The LLM is an interface, orchestration, and explanation layer.
+
+The LLM must never create or modify:
+
+- airport statistics
+- KPIs
+- congestion values
+- long-haul percentages
+- unmet-demand indices
+- opportunity scores
+- confidence levels
+- airport rankings
+
+All numerical analytical results must originate from deterministic backend functions.
+
+## Layer Boundaries
+
+Maintain this flow:
+
+User
+→ React
+→ FastAPI
+→ Agent
+→ Approved Tool
+→ Service
+→ Analytics / Scoring
+→ Data Provider
+
+Do not skip layers without a clear reason.
+
+React must not implement business calculations.
+
+FastAPI routes must not implement business logic.
+
+Providers must not implement scoring.
+
+The LLM must not directly call arbitrary external APIs.
+
+## Simplicity
+
+Prefer the simplest implementation that satisfies the requirement.
+
+Do not introduce:
+
+- microservices
+- event buses
+- message queues
+- vector databases
+- RAG
+- Redis
+- authentication
+- unnecessary design patterns
+
+unless explicitly requested.
+
+## Files
+
+Keep files focused on one responsibility.
+
+Prefer small functions and clear naming.
+
+Do not create unnecessary wrapper files.
+
+## Codebase Navigation
+
+Before making substantial multi-file changes, read:
+
+CODEBASE_MAP.md
+
+Use it to identify the correct layer and canonical files.
+
+Do not blindly search the entire repository if the map already identifies the responsible module.
+
+If architecture, responsibilities, important files, or major execution flows change, update CODEBASE_MAP.md.
+
+Minor implementation changes do not require updating the map.
+
+## Guardrails
+
+Never weaken existing AI or data guardrails simply to make a feature work.
+
+Never silently fall back from deterministic calculations to LLM-generated values.
+
+When data is missing, preserve explicit uncertainty.
+
+## Verification
+
+After significant implementation work, use the verify-feature skill.
+
+For AI behavior changes, also use test-agent.
+
+For security-sensitive changes, use security-review.
+
+For major architectural changes, use architecture-check.

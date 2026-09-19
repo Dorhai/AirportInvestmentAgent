@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-19T14:27:00Z",
+  "title": "Design System: AirportIQ",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#fcfcfc", "tonalRamp": ["#ffffff", "#fcfcfc", "#f5f5f5", "#e5e5e5", "#d4d4d4", "#a3a3a3", "#737373", "#404040"] },
+      "ink": { "role": "primary", "displayName": "Ink", "canonical": "#111111", "tonalRamp": ["#404040", "#262626", "#171717", "#111111", "#0a0a0a", "#050505", "#000000", "#000000"] },
+      "ink-muted": { "role": "neutral", "displayName": "Ink Muted", "canonical": "#555555", "tonalRamp": ["#a3a3a3", "#737373", "#555555", "#404040", "#262626", "#171717", "#0a0a0a", "#000000"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#e0e0e0", "tonalRamp": ["#f5f5f5", "#e0e0e0", "#d4d4d4", "#a3a3a3", "#737373", "#525252", "#404040", "#262626"] },
+      "amber": { "role": "secondary", "displayName": "Amber", "canonical": "#d97706", "tonalRamp": ["#fef3c7", "#fde68a", "#fcd34d", "#fbbf24", "#f59e0b", "#d97706", "#b45309", "#92400e"] },
+      "red": { "role": "secondary", "displayName": "Red", "canonical": "#dc2626", "tonalRamp": ["#fee2e2", "#fecaca", "#fca5a5", "#f87171", "#ef4444", "#dc2626", "#b91c1c", "#991b1b"] },
+      "green": { "role": "secondary", "displayName": "Green", "canonical": "#16a34a", "tonalRamp": ["#dcfce7", "#bbf7d0", "#86efac", "#4ade80", "#22c55e", "#16a34a", "#15803d", "#166534"] }
+    },
+    "typographyMeta": {
+      "sans": { "displayName": "Sans", "purpose": "Primary UI actions and headers." },
+      "mono": { "displayName": "Mono", "purpose": "Data, labels, and metadata." }
+    },
+    "breakpoints": [
+      { "name": "sm", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Used for primary actions like Transmit.",
+      "html": "<button class=\"ds-btn-primary\">TRANSMIT</button>",
+      "css": ".ds-btn-primary { background: #111111; color: #ffffff; padding: 0.5rem 1.5rem; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border: none; border-radius: 0; cursor: pointer; transition: background-color 0.2s; } .ds-btn-primary:hover { background: #555555; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Used for secondary actions and confirmation options.",
+      "html": "<button class=\"ds-btn-secondary\">CONFIRM</button>",
+      "css": ".ds-btn-secondary { background: #ffffff; color: #111111; padding: 0.375rem 1rem; font-family: 'Menlo', monospace; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid #111111; border-radius: 0; cursor: pointer; transition: all 0.2s; } .ds-btn-secondary:hover { background: #111111; color: #ffffff; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Used for analyst queries.",
+      "html": "<input type=\"text\" class=\"ds-input\" placeholder=\"ENTER ANALYST QUERY...\" />",
+      "css": ".ds-input { background: #fcfcfc; color: #111111; padding: 0.5rem 1rem; font-family: 'Menlo', monospace; font-size: 0.875rem; border: 1px solid #e0e0e0; border-radius: 0; outline: none; width: 100%; } .ds-input:focus { border-color: #111111; } .ds-input::placeholder { color: #555555; }"
+    },
+    {
+      "name": "Confidence Badge",
+      "kind": "chip",
+      "refersTo": "badge-confidence",
+      "description": "Used to indicate data confidence levels.",
+      "html": "<span class=\"ds-badge-high\">CF:H</span> <span class=\"ds-badge-med\">CF:M</span>",
+      "css": ".ds-badge-high, .ds-badge-med { display: inline-block; padding: 1px 4px; font-family: 'Menlo', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 0; border: 1px solid; } .ds-badge-high { color: #16a34a; border-color: #16a34a; background: rgba(22, 163, 74, 0.1); } .ds-badge-med { color: #d97706; border-color: #d97706; background: rgba(217, 119, 6, 0.1); margin-left: 8px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Terminal Dashboard",
+    "overview": "AirportIQ is a data-dense, brutalist, and highly functional analytical interface. It evokes the feeling of air traffic control systems and terminal dashboards: high contrast, zero ornamentation, and absolute clarity. The aesthetic relies entirely on typography, strict borders, and a stark black-and-white foundation with semantic color used only for data status.",
+    "keyCharacteristics": [
+      "Monospace-heavy typography for data and labels.",
+      "High-contrast, stark black and white foundation (`ink` and `paper`).",
+      "Zero border radius; all corners are perfectly sharp.",
+      "Dense layout with minimal padding.",
+      "Semantic colors (amber, red, green) strictly reserved for status, confidence, and warnings."
+    ],
+    "rules": [
+      { "name": "The Semantic Strictness Rule", "body": "Semantic colors (green, amber, red) are never used for decoration. They appear only to convey data status, confidence levels, or system warnings.", "section": "colors" },
+      { "name": "The Mono-Data Rule", "body": "Any numerical value, system status, or metadata label must be set in the monospace font.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat. Shadows are not used for structure or hierarchy.", "section": "elevation" },
+      { "name": "The Razor Edge Rule", "body": "There are no rounded corners anywhere in the system. Every button, input, card, and badge has a 0px border radius.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do use 1px borders to separate dense information.",
+      "Do use uppercase monospace with wide tracking for labels and metadata.",
+      "Do keep all corners perfectly sharp (0px radius)."
+    ],
+    "donts": [
+      "Don't use rounded corners on any element.",
+      "Don't use shadows for elevation or hierarchy.",
+      "Don't use semantic colors (green, amber, red) for structural or decorative elements."
+    ]
+  }
+}

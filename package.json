@@ -1,0 +1,12 @@
+{
+  "name": "airportiq",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "uv run --directory backend uvicorn app.main:app --reload --reload-exclude tests --host 0.0.0.0 --port 8000",
+    "dev:frontend": "npm run dev --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

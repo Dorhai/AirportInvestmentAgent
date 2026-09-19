@@ -1,0 +1,47 @@
+{
+  "BOS": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  },
+  "BDL": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  },
+  "PVD": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  },
+  "PWM": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  },
+  "LAX": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  },
+  "SNA": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  },
+  "ANC": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  },
+  "SFO": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  },
+  "JFK": {
+    "distinct_destinations": 120,
+    "international_destinations": 30,
+    "long_haul_route_count": 15
+  }
+}

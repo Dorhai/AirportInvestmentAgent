@@ -1,0 +1,60 @@
+---
+description: Frontend conventions for React, TypeScript and the AirportIQ interface.
+globs:
+  - "frontend/src/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Frontend Rules
+
+Use React functional components.
+
+Use TypeScript strict typing.
+
+The frontend displays analytical results.
+
+It does not calculate analytical results.
+
+Never reproduce backend scoring formulas in TypeScript.
+
+Never infer missing metrics in the frontend.
+
+Use structured API fields instead of parsing numbers from LLM-generated text.
+
+Keep server communication inside services/api.ts.
+
+Use TanStack Query where server-state management helps.
+
+Use local React state for simple UI state.
+
+Do not introduce Redux.
+
+Components should be grouped by domain:
+
+chat/
+airport/
+common/
+layout/
+
+Create reusable components only when reuse is real.
+
+Avoid giant components.
+
+Prefer composition over deeply configurable components.
+
+Display:
+
+- confidence
+- assumptions
+- warnings
+- sources
+
+when supplied by the backend.
+
+Voice functionality must always have a text fallback.
+
+Do not automatically execute uncertain speech recognition results.
+
+Keep the visual design minimal, professional and readable.
+
+Before adding a new frontend component, check CODEBASE_MAP.md for the appropriate component group.

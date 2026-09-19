@@ -1,0 +1,52 @@
+---
+description: Backend conventions for FastAPI, analytics, scoring, providers and agent tools.
+globs:
+  - "backend/**/*.py"
+alwaysApply: false
+---
+
+# Backend Rules
+
+Use Python type hints throughout.
+
+Use Pydantic at external boundaries.
+
+Keep FastAPI routes thin.
+
+Routes should:
+
+1. validate request
+2. call service
+3. return response
+
+Business logic belongs in services.
+
+Analytics functions should preferably be pure deterministic functions.
+
+Scoring functions must not call the LLM.
+
+Data providers should normalize external APIs into internal Pydantic models.
+
+External API formats must not leak into analytics or scoring.
+
+Use async HTTP calls with httpx where appropriate.
+
+All external requests must have timeouts.
+
+Do not expose secrets or raw internal exceptions.
+
+Use explicit exceptions from core/exceptions.py.
+
+Missing numerical data must remain None or explicitly unavailable.
+
+Never silently convert missing values to zero.
+
+Scores must be clamped to their documented range.
+
+Keep scoring weights centralized.
+
+Tests should directly cover deterministic calculations.
+
+Prefer dependency injection through function/class arguments over complex frameworks.
+
+Before adding a new backend module, check CODEBASE_MAP.md to determine whether an existing module already owns that responsibility.

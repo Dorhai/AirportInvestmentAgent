@@ -1,0 +1,1447 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AirportIQ API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/airports/{code}": {
+      "get": {
+        "summary": "Get Airport Metrics",
+        "operationId": "get_airport_metrics_api_airports__code__get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirportMetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/airports/{code}/score": {
+      "get": {
+        "summary": "Get Airport Score",
+        "operationId": "get_airport_score_api_airports__code__score_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirportScore"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/airports/compare": {
+      "post": {
+        "summary": "Compare Airports",
+        "operationId": "compare_airports_api_airports_compare_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComparisonResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scoring/methodology": {
+      "get": {
+        "summary": "Get Scoring Methodology",
+        "operationId": "get_scoring_methodology_api_scoring_methodology_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoringMethodology"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/regions/{region}/ranking": {
+      "get": {
+        "summary": "Get Region Ranking",
+        "operationId": "get_region_ranking_api_regions__region__ranking_get",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Region"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankingResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "summary": "Chat",
+        "operationId": "chat_api_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tts/status": {
+      "get": {
+        "summary": "Tts Status",
+        "description": "Returns TTS capability status without exposing secrets.",
+        "operationId": "tts_status_api_tts_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tts": {
+      "post": {
+        "summary": "Synthesize Speech",
+        "description": "Converts text to speech using the configured provider.\nReturns audio/mpeg stream.",
+        "operationId": "synthesize_speech_api_tts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TtsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Absent": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "absent",
+            "title": "Kind",
+            "default": "absent"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "NOT_PUBLISHED",
+              "PROVIDER_FAILED",
+              "NO_DEPARTURES",
+              "OUT_OF_SCOPE"
+            ],
+            "title": "Reason"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "attempted": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Attempted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason",
+          "detail",
+          "attempted"
+        ],
+        "title": "Absent"
+      },
+      "AirportContext": {
+        "properties": {
+          "nas_delay_program": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DelayProgram"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weather": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeatherContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "connectivity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConnectivityContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "long_haul_departures": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "live",
+                  "unavailable"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Long Haul Departures"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "AirportContext"
+      },
+      "AirportMetrics": {
+        "properties": {
+          "airport_code": {
+            "type": "string",
+            "enum": [
+              "BOS",
+              "BDL",
+              "PVD",
+              "PWM",
+              "LAX",
+              "SNA",
+              "ANC",
+              "SFO",
+              "JFK"
+            ],
+            "title": "Airport Code"
+          },
+          "airport_name": {
+            "type": "string",
+            "title": "Airport Name",
+            "default": ""
+          },
+          "passenger_volume": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_int_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Passenger Volume"
+          },
+          "previous_passenger_volume": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_int_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Previous Passenger Volume"
+          },
+          "annual_operations": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_int_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Annual Operations"
+          },
+          "delayed_flights_pct": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Delayed Flights Pct"
+          },
+          "average_delay_minutes": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Average Delay Minutes"
+          },
+          "long_haul_flights": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_int_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Long Haul Flights"
+          },
+          "total_departures": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_int_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Total Departures"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources",
+            "readOnly": true
+          },
+          "data_period": {
+            "type": "string",
+            "title": "Data Period",
+            "readOnly": true
+          },
+          "core_completeness_score": {
+            "type": "number",
+            "title": "Core Completeness Score",
+            "readOnly": true
+          },
+          "completeness_score": {
+            "type": "number",
+            "title": "Completeness Score",
+            "readOnly": true
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "live",
+              "sample",
+              "mixed"
+            ],
+            "title": "Freshness",
+            "readOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_code",
+          "passenger_volume",
+          "previous_passenger_volume",
+          "annual_operations",
+          "delayed_flights_pct",
+          "average_delay_minutes",
+          "long_haul_flights",
+          "total_departures",
+          "sources",
+          "data_period",
+          "core_completeness_score",
+          "completeness_score",
+          "freshness"
+        ],
+        "title": "AirportMetrics"
+      },
+      "AirportMetricsResponse": {
+        "properties": {
+          "metrics": {
+            "$ref": "#/components/schemas/AirportMetrics"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AirportContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "metrics"
+        ],
+        "title": "AirportMetricsResponse"
+      },
+      "AirportScore": {
+        "properties": {
+          "airport_code": {
+            "type": "string",
+            "enum": [
+              "BOS",
+              "BDL",
+              "PVD",
+              "PWM",
+              "LAX",
+              "SNA",
+              "ANC",
+              "SFO",
+              "JFK"
+            ],
+            "title": "Airport Code"
+          },
+          "airport_name": {
+            "type": "string",
+            "title": "Airport Name",
+            "default": ""
+          },
+          "opportunity_score": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Opportunity Score"
+          },
+          "demand_growth_score": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Demand Growth Score"
+          },
+          "congestion_score": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Congestion Score"
+          },
+          "delay_pressure_score": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Delay Pressure Score"
+          },
+          "capacity_pressure_score": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Capacity Pressure Score"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ],
+            "title": "Confidence"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AirportContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions",
+            "readOnly": true
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations",
+            "readOnly": true
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources",
+            "readOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_code",
+          "opportunity_score",
+          "demand_growth_score",
+          "congestion_score",
+          "delay_pressure_score",
+          "capacity_pressure_score",
+          "confidence",
+          "snapshot_at",
+          "assumptions",
+          "limitations",
+          "sources"
+        ],
+        "title": "AirportScore"
+      },
+      "ChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "conversation_id": {
+            "type": "string",
+            "title": "Conversation Id",
+            "default": "default"
+          },
+          "voice_confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Confidence",
+            "description": "Speech-recognition confidence (0-1). None means typed input."
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest"
+      },
+      "CompareRequest": {
+        "properties": {
+          "airport_codes": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "BOS",
+                "BDL",
+                "PVD",
+                "PWM",
+                "LAX",
+                "SNA",
+                "ANC",
+                "SFO",
+                "JFK"
+              ]
+            },
+            "type": "array",
+            "title": "Airport Codes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_codes"
+        ],
+        "title": "CompareRequest"
+      },
+      "ComparisonResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "comparison",
+            "title": "Kind",
+            "default": "comparison"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "highest_congestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Congestion"
+          },
+          "highest_opportunity_score": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Opportunity Score"
+          },
+          "period_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "rows",
+          "highest_congestion",
+          "highest_opportunity_score",
+          "period_warning"
+        ],
+        "title": "ComparisonResult"
+      },
+      "ComparisonRow": {
+        "properties": {
+          "airport_code": {
+            "type": "string",
+            "enum": [
+              "BOS",
+              "BDL",
+              "PVD",
+              "PWM",
+              "LAX",
+              "SNA",
+              "ANC",
+              "SFO",
+              "JFK"
+            ],
+            "title": "Airport Code"
+          },
+          "score": {
+            "$ref": "#/components/schemas/AirportScore"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AirportMetrics"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AirportContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_code",
+          "score",
+          "metrics"
+        ],
+        "title": "ComparisonRow"
+      },
+      "ConnectivityContext": {
+        "properties": {
+          "distinct_destinations": {
+            "type": "integer",
+            "title": "Distinct Destinations"
+          },
+          "international_destinations": {
+            "type": "integer",
+            "title": "International Destinations"
+          },
+          "long_haul_route_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Long Haul Route Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "distinct_destinations",
+          "international_destinations"
+        ],
+        "title": "ConnectivityContext"
+      },
+      "DelayProgram": {
+        "properties": {
+          "airport_icao": {
+            "type": "string",
+            "title": "Airport Icao"
+          },
+          "program": {
+            "type": "string",
+            "title": "Program"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "avg_delay": {
+            "type": "string",
+            "title": "Avg Delay"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_icao",
+          "program",
+          "reason",
+          "avg_delay",
+          "updated_at"
+        ],
+        "title": "DelayProgram"
+      },
+      "Derived": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "derived",
+            "title": "Kind",
+            "default": "derived"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "inputs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Inputs"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "live",
+              "sample",
+              "mixed"
+            ],
+            "title": "Freshness"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "inputs",
+          "period",
+          "sources",
+          "freshness"
+        ],
+        "title": "Derived"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "Health"
+      },
+      "Live": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "live",
+            "title": "Kind",
+            "default": "live"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "period",
+          "fetched_at"
+        ],
+        "title": "Live"
+      },
+      "Present_float_": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "present",
+            "title": "Kind",
+            "default": "present"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "origin": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Live"
+              },
+              {
+                "$ref": "#/components/schemas/Sample"
+              },
+              {
+                "$ref": "#/components/schemas/Derived"
+              },
+              {
+                "$ref": "#/components/schemas/Proxy"
+              },
+              {
+                "$ref": "#/components/schemas/Scenario"
+              }
+            ],
+            "title": "Origin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "origin"
+        ],
+        "title": "Present[float]"
+      },
+      "Present_int_": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "present",
+            "title": "Kind",
+            "default": "present"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          },
+          "origin": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Live"
+              },
+              {
+                "$ref": "#/components/schemas/Sample"
+              },
+              {
+                "$ref": "#/components/schemas/Derived"
+              },
+              {
+                "$ref": "#/components/schemas/Proxy"
+              },
+              {
+                "$ref": "#/components/schemas/Scenario"
+              }
+            ],
+            "title": "Origin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "origin"
+        ],
+        "title": "Present[int]"
+      },
+      "Proxy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "proxy",
+            "title": "Kind",
+            "default": "proxy"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "inputs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Inputs"
+          },
+          "assumption": {
+            "type": "string",
+            "title": "Assumption"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "live",
+              "sample",
+              "mixed"
+            ],
+            "title": "Freshness"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "inputs",
+          "assumption",
+          "period",
+          "sources",
+          "freshness"
+        ],
+        "title": "Proxy"
+      },
+      "RankingResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "ranking",
+            "title": "Kind",
+            "default": "ranking"
+          },
+          "ranked": {
+            "items": {
+              "$ref": "#/components/schemas/AirportScore"
+            },
+            "type": "array",
+            "title": "Ranked"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "peer_note": {
+            "type": "string",
+            "title": "Peer Note"
+          },
+          "metric": {
+            "type": "string",
+            "title": "Metric",
+            "default": "opportunity_score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "ranked",
+          "region",
+          "peer_note"
+        ],
+        "title": "RankingResult"
+      },
+      "Sample": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "sample",
+            "title": "Kind",
+            "default": "sample"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "citation": {
+            "type": "string",
+            "title": "Citation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "period",
+          "citation"
+        ],
+        "title": "Sample"
+      },
+      "Scenario": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "scenario",
+            "title": "Kind",
+            "default": "scenario"
+          },
+          "adjustment": {
+            "type": "string",
+            "title": "Adjustment"
+          },
+          "baseline_origin": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Live"
+              },
+              {
+                "$ref": "#/components/schemas/Sample"
+              },
+              {
+                "$ref": "#/components/schemas/Derived"
+              },
+              {
+                "$ref": "#/components/schemas/Proxy"
+              },
+              {
+                "$ref": "#/components/schemas/Scenario"
+              }
+            ],
+            "title": "Baseline Origin"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          }
+        },
+        "type": "object",
+        "required": [
+          "adjustment",
+          "baseline_origin",
+          "period"
+        ],
+        "title": "Scenario"
+      },
+      "ScoringMethodology": {
+        "properties": {
+          "weights": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Weights"
+          },
+          "component_labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Component Labels"
+          },
+          "rules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weights",
+          "component_labels",
+          "rules"
+        ],
+        "title": "ScoringMethodology"
+      },
+      "TtsRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "TtsRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeatherContext": {
+        "properties": {
+          "flight_category": {
+            "type": "string",
+            "title": "Flight Category"
+          },
+          "wind": {
+            "type": "string",
+            "title": "Wind"
+          },
+          "visibility": {
+            "type": "string",
+            "title": "Visibility"
+          },
+          "remarks": {
+            "type": "string",
+            "title": "Remarks"
+          },
+          "observation_time": {
+            "type": "string",
+            "title": "Observation Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flight_category",
+          "wind",
+          "visibility",
+          "remarks",
+          "observation_time"
+        ],
+        "title": "WeatherContext"
+      }
+    }
+  }
+}
