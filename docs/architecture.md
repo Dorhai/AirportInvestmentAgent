@@ -12,34 +12,7 @@
 - **Chat:** SSE [`POST /api/chat`](../backend/app/api/chat.py) → [`Orchestrator.turn_stream`](../backend/app/agent/orchestrator.py)
 - **REST (no LLM):** [`airports.py`](../backend/app/api/airports.py) → same `AnalysisService.universe()`
 
-```mermaid
-flowchart LR
-  subgraph ui [Frontend]
-    ChatUI[React Chat]
-    Cards[Structured cards]
-  end
-  subgraph api [FastAPI]
-    ChatRoute["/api/chat SSE"]
-    RestRoute["/api/airports/*"]
-  end
-  subgraph core [Backend core]
-    Orch[Orchestrator]
-    Analysis[AnalysisService]
-    Tools[Approved tools]
-    Analytics[Analytics]
-    Scoring[Scoring]
-    Providers[Providers]
-  end
-  ChatUI --> ChatRoute --> Orch
-  Orch --> Tools --> Analysis
-  RestRoute --> Analysis
-  Analysis --> Providers
-  Analysis --> Analytics --> Scoring
-  Orch -->|"meta + delta"| ChatUI
-  Cards --> ChatUI
-```
-
-*(For embedding in READMEs or external docs, use the rendered [assets/airportiq-architecture.svg](assets/airportiq-architecture.svg))*
+*(High-level numbered flow: [assets/airportiq-architecture.mmd](assets/airportiq-architecture.mmd); rendered [PNG](assets/airportiq-architecture.png) / [SVG](assets/airportiq-architecture.svg).)*
 
 ## 2. Layer responsibilities
 

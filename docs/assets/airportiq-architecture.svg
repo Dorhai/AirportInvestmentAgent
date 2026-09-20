@@ -1,155 +1,72 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 820" role="img" aria-labelledby="title desc">
-  <title id="title">AirportIQ system context and high-level architecture</title>
-  <desc id="desc">User and React UI talk to FastAPI. Chat goes through the agent orchestrator, approved tools, and an LLM. REST and tools both read AnalysisService. Analytics and scoring are deterministic Python. Providers fetch public aviation data.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 1020" role="img" aria-label="AirportIQ architecture">
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8ec5f0"/>
     </marker>
-    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-color="#0f172a" flood-opacity="0.12"/>
-    </filter>
+    <style>
+      text {
+        font-family: Inter, "Segoe UI", system-ui, sans-serif;
+        fill: #e8edf4;
+        letter-spacing: 0.08em;
+      }
+      .box { fill: #2a3548; stroke: #5a7a9a; stroke-width: 1; }
+      .edge { fill: none; stroke: #8ec5f0; stroke-width: 1.5; marker-end: url(#arrow); }
+      .edge-dashed { fill: none; stroke: #8ec5f0; stroke-width: 1.5; stroke-dasharray: 6 4; marker-end: url(#arrow); }
+      .edge-label { font-size: 19px; letter-spacing: 0.07em; text-anchor: middle; }
+      .title { font-size: 24px; font-weight: 600; letter-spacing: 0.06em; }
+      .sub { font-size: 18px; fill: #c8d4e0; letter-spacing: 0.07em; }
+    </style>
   </defs>
+  <rect width="100%" height="100%" fill="#1a2030"/>
 
-  <rect width="1080" height="820" fill="#f8fafc"/>
-
-  <!-- ========== A. System context ========== -->
-  <text x="32" y="36" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">A. System context</text>
-  <text x="32" y="56" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#475569">People and external systems that AirportIQ depends on. Numbers never come from the LLM.</text>
-
-  <rect x="40" y="78" width="140" height="88" rx="10" fill="#fff" stroke="#64748b" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="110" y="112" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Analyst / user</text>
-  <text x="110" y="132" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Chat, voice, REST</text>
-
-  <rect x="270" y="62" width="280" height="120" rx="12" fill="#0f766e" filter="url(#shadow)"/>
-  <text x="410" y="108" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#fff">AirportIQ</text>
-  <text x="410" y="130" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" fill="#ccfbf1">Conversational expansion-pressure analyst</text>
-  <text x="410" y="148" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" fill="#99f6e4">Python scores  ·  LLM explanation</text>
-
-  <rect x="640" y="50" width="180" height="64" rx="10" fill="#fff" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="730" y="76" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#5b21b6">OpenAI LLM</text>
-  <text x="730" y="94" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#6d28d9">tool choice + prose  ·  optional TTS</text>
-
-  <rect x="850" y="50" width="190" height="64" rx="10" fill="#fff" stroke="#c2410c" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="945" y="76" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#9a3412">Public aviation data</text>
-  <text x="945" y="94" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#c2410c">FAA  ·  BTS  ·  OpenSky  ·  NOAA</text>
-
-  <line x1="180" y1="122" x2="270" y2="122" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
-  <line x1="550" y1="92" x2="640" y2="82" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#arrow)"/>
-  <line x1="550" y1="150" x2="850" y2="82" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arrow)"/>
-
-  <text x="215" y="114" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#475569">questions</text>
-  <text x="595" y="72" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#7c3aed">orchestration only</text>
-  <text x="680" y="168" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#c2410c">metrics via providers  —  not via the LLM</text>
-
-  <!-- ========== B. High-level design flow ========== -->
-  <text x="32" y="220" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">B. High-level design flow</text>
-  <text x="32" y="240" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#475569">Same AnalysisService Universe for chat tools and REST. LLM never writes scores.</text>
-
-  <!-- Row 1: client + api -->
-  <g>
-    <rect x="32" y="262" width="1016" height="118" rx="12" fill="#fff" stroke="#e2e8f0"/>
-    <text x="48" y="284" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="0.6">CLIENT AND API</text>
-
-    <rect x="48" y="298" width="150" height="62" rx="8" fill="#1e3a5f"/>
-    <text x="123" y="325" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">React Chat UI</text>
-    <text x="123" y="344" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#bfdbfe">cards  ·  SSE  ·  voice</text>
-
-    <rect x="248" y="298" width="150" height="62" rx="8" fill="#1e3a5f"/>
-    <text x="323" y="325" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">api.ts</text>
-    <text x="323" y="344" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#bfdbfe">only HTTP client</text>
-
-    <rect x="448" y="298" width="270" height="62" rx="8" fill="#0e7490"/>
-    <text x="583" y="322" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">FastAPI</text>
-    <text x="583" y="342" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#a5f3fc">POST /api/chat SSE   ·   /api/airports/*   ·   /api/regions/*</text>
-
-    <rect x="768" y="298" width="256" height="62" rx="8" fill="#0e7490"/>
-    <text x="896" y="325" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">Validation only</text>
-    <text x="896" y="344" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#a5f3fc">no scoring  ·  no aviation APIs</text>
-
-    <line x1="198" y1="329" x2="248" y2="329" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
-    <line x1="398" y1="329" x2="448" y2="329" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
-    <line x1="718" y1="329" x2="768" y2="329" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <g transform="translate(250, 28)">
+    <rect class="box" width="380" height="136" rx="2"/>
+    <text x="190" y="52" class="title" text-anchor="middle">Web app</text>
+    <text x="190" y="90" class="sub" text-anchor="middle">Chat · voice · score cards</text>
   </g>
 
-  <!-- Row 2: agent -->
-  <g>
-    <rect x="32" y="400" width="1016" height="118" rx="12" fill="#fff" stroke="#e2e8f0"/>
-    <text x="48" y="422" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="0.6">AGENT  —  CHAT PATH ONLY</text>
-
-    <rect x="48" y="436" width="190" height="62" rx="8" fill="#5b21b6"/>
-    <text x="143" y="462" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">Orchestrator</text>
-    <text x="143" y="480" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#ddd6fe">turn_stream  ·  SSE phases</text>
-
-    <rect x="278" y="436" width="190" height="62" rx="8" fill="#5b21b6"/>
-    <text x="373" y="462" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">Guardrails / session</text>
-    <text x="373" y="480" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#ddd6fe">scope  ·  6 turns  ·  TTL</text>
-
-    <rect x="508" y="436" width="230" height="62" rx="8" fill="#6d28d9"/>
-    <text x="623" y="462" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">LLM  (choose_tools + respond)</text>
-    <text x="623" y="480" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#ede9fe">no KPIs  ·  no rankings  ·  no APIs</text>
-
-    <rect x="778" y="436" width="246" height="62" rx="8" fill="#5b21b6"/>
-    <text x="901" y="462" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">Approved tools (12)</text>
-    <text x="901" y="480" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#ddd6fe">thin reads over Universe</text>
-
-    <line x1="238" y1="467" x2="278" y2="467" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
-    <line x1="468" y1="467" x2="508" y2="467" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
-    <line x1="738" y1="467" x2="778" y2="467" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <g transform="translate(490, 292)">
+    <rect class="box" width="380" height="140" rx="2"/>
+    <text x="190" y="52" class="title" text-anchor="middle">API server</text>
+    <text x="190" y="90" class="sub" text-anchor="middle">Chat endpoint · airport data endpoints</text>
   </g>
 
-  <!-- Row 3: core -->
-  <g>
-    <rect x="32" y="538" width="1016" height="118" rx="12" fill="#fff" stroke="#e2e8f0"/>
-    <text x="48" y="560" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="0.6">DETERMINISTIC CORE  —  CHAT TOOLS AND REST</text>
-
-    <rect x="48" y="574" width="220" height="62" rx="8" fill="#166534"/>
-    <text x="158" y="600" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">AnalysisService</text>
-    <text x="158" y="618" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#bbf7d0">Universe TTL snapshot (1h)</text>
-
-    <rect x="308" y="574" width="180" height="62" rx="8" fill="#166534"/>
-    <text x="398" y="600" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">Analytics</text>
-    <text x="398" y="618" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#bbf7d0">growth  ·  congestion  ·  capacity</text>
-
-    <rect x="528" y="574" width="200" height="62" rx="8" fill="#166534"/>
-    <text x="628" y="600" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">Scoring</text>
-    <text x="628" y="618" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#bbf7d0">expansion_score.py  30/30/20/20</text>
-
-    <rect x="768" y="574" width="256" height="62" rx="8" fill="#166534"/>
-    <text x="896" y="600" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">CompositeProvider</text>
-    <text x="896" y="618" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#bbf7d0">live / file  then  sample fallback</text>
-
-    <line x1="268" y1="605" x2="308" y2="605" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
-    <line x1="488" y1="605" x2="528" y2="605" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
-    <line x1="728" y1="605" x2="768" y2="605" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <g transform="translate(50, 580)">
+    <rect class="box" width="380" height="140" rx="2"/>
+    <text x="190" y="52" class="title" text-anchor="middle">AI assistant</text>
+    <text class="sub" text-anchor="middle">
+      <tspan x="190" y="88">Understands the question</tspan>
+      <tspan x="190" dy="28">explains the numbers</tspan>
+    </text>
   </g>
 
-  <!-- Row 4: sources -->
-  <g>
-    <rect x="32" y="676" width="1016" height="118" rx="12" fill="#fff" stroke="#e2e8f0"/>
-    <text x="48" y="698" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="0.6">DATA PROVIDERS  (FETCH AND NORMALIZE — DO NOT SCORE)</text>
-
-    <rect x="48" y="712" width="150" height="58" rx="8" fill="#9a3412"/>
-    <text x="123" y="736" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#fff">FAA ACAIS / ATADS</text>
-    <text x="123" y="754" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#fed7aa">enplanements  ·  operations</text>
-
-    <rect x="218" y="712" width="140" height="58" rx="8" fill="#9a3412"/>
-    <text x="288" y="736" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#fff">BTS T-100</text>
-    <text x="288" y="754" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#fed7aa">long-haul departures</text>
-
-    <rect x="378" y="712" width="140" height="58" rx="8" fill="#9a3412"/>
-    <text x="448" y="736" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#fff">OpenSky</text>
-    <text x="448" y="754" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#fed7aa">live departures fallback</text>
-
-    <rect x="538" y="712" width="140" height="58" rx="8" fill="#9a3412"/>
-    <text x="608" y="736" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#fff">FAA NAS</text>
-    <text x="608" y="754" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#fed7aa">GDP delay programs</text>
-
-    <rect x="698" y="712" width="150" height="58" rx="8" fill="#9a3412"/>
-    <text x="773" y="736" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#fff">NOAA / OpenFlights</text>
-    <text x="773" y="754" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#fed7aa">weather  ·  connectivity</text>
-
-    <rect x="868" y="712" width="156" height="58" rx="8" fill="#78716c"/>
-    <text x="946" y="736" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#fff">Sample fallback</text>
-    <text x="946" y="754" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="9" fill="#e7e5e4">labeled  ·  last in merge</text>
+  <g transform="translate(490, 848)">
+    <rect class="box" width="380" height="140" rx="2"/>
+    <text x="190" y="52" class="title" text-anchor="middle">Python analytics</text>
+    <text class="sub" text-anchor="middle">
+      <tspan x="190" y="88">Loads public aviation data</tspan>
+      <tspan x="190" dy="28">calculates scores</tspan>
+    </text>
   </g>
+
+  <path class="edge" d="M 440 164 L 440 236 L 680 236 L 680 292"/>
+  <text class="edge-label" x="560" y="226">1 You ask a question</text>
+
+  <path class="edge" d="M 490 362 L 430 362 L 430 560 L 240 560 L 240 580"/>
+  <text class="edge-label" x="430" y="350">2 Chat goes to AI</text>
+
+  <path class="edge" d="M 240 720 L 240 784 L 680 784 L 680 848"/>
+  <text class="edge-label" x="420" y="774">3 Python fetches data and scores</text>
+
+  <path class="edge" d="M 490 918 L 56 918 L 56 650 L 50 650"/>
+  <text class="edge-label" x="130" y="908">4 Scores and tables to AI</text>
+
+  <path class="edge" d="M 130 580 L 130 164 L 320 164"/>
+  <text class="edge-label" x="130" y="372">5 Cards and explanation</text>
+
+  <path class="edge" d="M 790 432 L 790 848"/>
+  <text class="edge-label" x="790" y="640">Airport score API · skips AI</text>
+
+  <path class="edge-dashed" d="M 870 918 L 944 918 L 944 362 L 870 362"/>
+  <text class="edge-label" x="944" y="640">JSON only</text>
 </svg>

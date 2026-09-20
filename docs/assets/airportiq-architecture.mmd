@@ -1,0 +1,33 @@
+%% Hand-tuned orthogonal lines: edit airportiq-architecture.svg then:
+%% npx @resvg/resvg-js-cli --fit-width 1480 docs/assets/airportiq-architecture.svg docs/assets/airportiq-architecture.png
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "darkMode": true,
+    "background": "#1a2030",
+    "mainBkg": "#2a3548",
+    "primaryTextColor": "#e8edf4",
+    "primaryBorderColor": "#5a7a9a",
+    "lineColor": "#8ec5f0",
+    "textColor": "#e8edf4",
+    "clusterBkg": "#141b28",
+    "clusterBorder": "#3d5268",
+    "edgeLabelBackground": "#1a2030",
+    "fontFamily": "Inter, Segoe UI, system-ui, sans-serif"
+  },
+  "flowchart": { "htmlLabels": true, "curve": "linear", "padding": 28, "rankSpacing": 56, "nodeSpacing": 40 }
+}}%%
+flowchart TD
+  FE["Web app<br/>Chat · voice · score cards"]
+  API["API server<br/>Chat endpoint · airport data endpoints"]
+  AG["AI assistant<br/>Understands the question · explains the numbers"]
+  TR["Python analytics<br/>Loads public aviation data · calculates scores"]
+
+  FE -->|1 You ask a question| API
+  API -->|2 Chat goes to AI| AG
+  AG -->|3 Python fetches data and scores| TR
+  TR -->|4 Scores and tables to AI| AG
+  AG -->|5 Cards and explanation| FE
+
+  API -->|Airport score API · skips AI| TR
+  TR -.->|JSON only| API
