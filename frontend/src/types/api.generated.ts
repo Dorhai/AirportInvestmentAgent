@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/airports/{code}/long-haul": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Airport Long Haul */
+        get: operations["get_airport_long_haul_api_airports__code__long_haul_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/airports/compare": {
         parameters: {
             query?: never;
@@ -117,6 +134,43 @@ export interface paths {
         put?: never;
         /** Chat */
         post: operations["chat_api_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Chat Schema
+         * @description Dummy endpoint to force ChatResponse into the OpenAPI schema.
+         */
+        get: operations["chat_schema_api_chat_schema_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/schema/confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Confirmation Schema */
+        get: operations["confirmation_schema_api_chat_schema_confirmation_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -207,7 +261,8 @@ export interface components {
         AirportContext: {
             nas_delay_program?: components["schemas"]["DelayProgram"] | null;
             weather?: components["schemas"]["WeatherContext"] | null;
-            connectivity?: components["schemas"]["ConnectivityContext"] | null;
+            facility?: components["schemas"]["FacilityContext"] | null;
+            national_traffic?: components["schemas"]["NationalTrafficContext"] | null;
             /** Long Haul Departures */
             long_haul_departures?: ("live" | "unavailable") | null;
             /**
@@ -218,11 +273,8 @@ export interface components {
         };
         /** AirportMetrics */
         AirportMetrics: {
-            /**
-             * Airport Code
-             * @enum {string}
-             */
-            airport_code: "BOS" | "BDL" | "PVD" | "PWM" | "LAX" | "SNA" | "ANC" | "SFO" | "JFK";
+            /** Airport Code */
+            airport_code: string;
             /**
              * Airport Name
              * @default
@@ -242,6 +294,26 @@ export interface components {
             long_haul_flights: components["schemas"]["Present_int_"] | components["schemas"]["Absent"];
             /** Total Departures */
             total_departures: components["schemas"]["Present_int_"] | components["schemas"]["Absent"];
+            /**
+             * International Departures
+             * @default {
+             *       "kind": "absent",
+             *       "reason": "NOT_PUBLISHED",
+             *       "detail": "default",
+             *       "attempted": []
+             *     }
+             */
+            international_departures: components["schemas"]["Present_int_"] | components["schemas"]["Absent"];
+            /**
+             * Average Flight Distance Sm
+             * @default {
+             *       "kind": "absent",
+             *       "reason": "NOT_PUBLISHED",
+             *       "detail": "default",
+             *       "attempted": []
+             *     }
+             */
+            average_flight_distance_sm: components["schemas"]["Present_float_"] | components["schemas"]["Absent"];
             /**
              * Warnings
              * @default []
@@ -268,11 +340,8 @@ export interface components {
         };
         /** AirportScore */
         AirportScore: {
-            /**
-             * Airport Code
-             * @enum {string}
-             */
-            airport_code: "BOS" | "BDL" | "PVD" | "PWM" | "LAX" | "SNA" | "ANC" | "SFO" | "JFK";
+            /** Airport Code */
+            airport_code: string;
             /**
              * Airport Name
              * @default
@@ -390,7 +459,7 @@ export interface components {
         /** CompareRequest */
         CompareRequest: {
             /** Airport Codes */
-            airport_codes: ("BOS" | "BDL" | "PVD" | "PWM" | "LAX" | "SNA" | "ANC" | "SFO" | "JFK")[];
+            airport_codes: string[];
         };
         /** ComparisonResult */
         ComparisonResult: {
@@ -414,11 +483,8 @@ export interface components {
         };
         /** ComparisonRow */
         ComparisonRow: {
-            /**
-             * Airport Code
-             * @enum {string}
-             */
-            airport_code: "BOS" | "BDL" | "PVD" | "PWM" | "LAX" | "SNA" | "ANC" | "SFO" | "JFK";
+            /** Airport Code */
+            airport_code: string;
             score: components["schemas"]["AirportScore"];
             metrics: components["schemas"]["AirportMetrics"];
             context?: components["schemas"]["AirportContext"] | null;
@@ -450,15 +516,6 @@ export interface components {
             kind: "congestion_explain";
             /** Rows */
             rows: components["schemas"]["ExplainCongestionRow"][];
-        };
-        /** ConnectivityContext */
-        ConnectivityContext: {
-            /** Distinct Destinations */
-            distinct_destinations: number;
-            /** International Destinations */
-            international_destinations: number;
-            /** Long Haul Route Count */
-            long_haul_route_count?: number | null;
         };
         /** DelayProgram */
         DelayProgram: {
@@ -508,11 +565,8 @@ export interface components {
         };
         /** ExplainCapacityRow */
         ExplainCapacityRow: {
-            /**
-             * Airport Code
-             * @enum {string}
-             */
-            airport_code: "BOS" | "BDL" | "PVD" | "PWM" | "LAX" | "SNA" | "ANC" | "SFO" | "JFK";
+            /** Airport Code */
+            airport_code: string;
             /** Capacity Pressure Score */
             capacity_pressure_score: components["schemas"]["Present_float_"] | components["schemas"]["Absent"];
             /** Drivers */
@@ -524,11 +578,8 @@ export interface components {
         };
         /** ExplainCongestionRow */
         ExplainCongestionRow: {
-            /**
-             * Airport Code
-             * @enum {string}
-             */
-            airport_code: "BOS" | "BDL" | "PVD" | "PWM" | "LAX" | "SNA" | "ANC" | "SFO" | "JFK";
+            /** Airport Code */
+            airport_code: string;
             /** Congestion Score */
             congestion_score: components["schemas"]["Present_float_"] | components["schemas"]["Absent"];
             /** Drivers */
@@ -538,17 +589,32 @@ export interface components {
         };
         /** ExplainUnmetRow */
         ExplainUnmetRow: {
-            /**
-             * Airport Code
-             * @enum {string}
-             */
-            airport_code: "BOS" | "BDL" | "PVD" | "PWM" | "LAX" | "SNA" | "ANC" | "SFO" | "JFK";
+            /** Airport Code */
+            airport_code: string;
             /** Unmet Demand Index */
             unmet_demand_index: components["schemas"]["Present_float_"] | components["schemas"]["Absent"];
             /** Drivers */
             drivers: components["schemas"]["DriverRow"][];
             /** Highest Driver */
             highest_driver?: string | null;
+        };
+        /** FacilityContext */
+        FacilityContext: {
+            /** Acreage */
+            acreage: number | null;
+            /** Part139 Class */
+            part139_class: string | null;
+            /** Tower Type */
+            tower_type: string | null;
+            /** Status */
+            status: string | null;
+            /** Effective Date */
+            effective_date: string;
+            /**
+             * Source
+             * @default NTAD Aviation Facilities
+             */
+            source: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -595,6 +661,61 @@ export interface components {
              * @default 3000
              */
             threshold_statute_miles: number;
+            /** Start Year */
+            start_year?: number | null;
+            /** End Year */
+            end_year?: number | null;
+            /** Total Departures */
+            total_departures?: number | null;
+            /** Long Haul Departures */
+            long_haul_departures?: number | null;
+            /**
+             * Passenger Only
+             * @default false
+             */
+            passenger_only: boolean;
+            /**
+             * Passenger Only Filter Available
+             * @default true
+             */
+            passenger_only_filter_available: boolean;
+            /** Unique Destinations */
+            unique_destinations?: number | null;
+            /** Long Haul Destinations */
+            long_haul_destinations?: number | null;
+            /** Average Distance Miles */
+            average_distance_miles?: number | null;
+            /** Max Distance Miles */
+            max_distance_miles?: number | null;
+            /**
+             * Top Long Haul Routes
+             * @default []
+             */
+            top_long_haul_routes: {
+                [key: string]: unknown;
+            }[];
+            /** International Departures */
+            international_departures?: number | null;
+            /** International Departure Share Pct */
+            international_departure_share_pct?: number | null;
+            /** Live Average Distance Miles */
+            live_average_distance_miles?: number | null;
+            /** Live Period */
+            live_period?: string | null;
+            /**
+             * Source
+             * @default BTS T-100 Segment
+             */
+            source: string;
+            /** Calculation */
+            calculation?: string | null;
+            /**
+             * Metadata
+             * @default {}
+             */
+            metadata: {
+                [key: string]: unknown;
+            };
         };
         /** MetricsResult */
         MetricsResult: {
@@ -609,6 +730,26 @@ export interface components {
             kind: "metrics";
             metrics: components["schemas"]["AirportMetrics"];
             context?: components["schemas"]["AirportContext"] | null;
+        };
+        /** NationalTrafficContext */
+        NationalTrafficContext: {
+            /** Period */
+            period: string;
+            /** Passengers 12M */
+            passengers_12m: number;
+            /** Passengers Prev 12M */
+            passengers_prev_12m: number;
+            /** Growth Pct */
+            growth_pct: number;
+            /** Departures 12M */
+            departures_12m: number;
+            /** Load Factor Pct */
+            load_factor_pct: number;
+            /**
+             * Source
+             * @default BTS AFF T-100 Summary
+             */
+            source: string;
         };
         /** Present[float] */
         Present_float_: {
@@ -924,6 +1065,41 @@ export interface operations {
             };
         };
     };
+    get_airport_long_haul_api_airports__code__long_haul_get: {
+        parameters: {
+            query?: {
+                threshold_miles?: number;
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     compare_airports_api_airports_compare_post: {
         parameters: {
             query?: never;
@@ -1027,7 +1203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatResponse"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -1037,6 +1213,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_schema_api_chat_schema_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+        };
+    };
+    confirmation_schema_api_chat_schema_confirmation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Confirmation"];
                 };
             };
         };

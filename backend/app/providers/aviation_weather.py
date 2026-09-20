@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Protocol
 
 import httpx
 
@@ -14,54 +14,74 @@ from app.providers.base import ContextOutcome
 logger = logging.getLogger(__name__)
 
 
+class _IcaoLookup(Protocol):
+    def get(self, code: str) -> Any | None: ...
+
+
 class AviationWeatherProvider:
-    # NOAA Aviation Weather Center Data API
     _URL = "https://aviationweather.gov/api/data/metar"
 
     def __init__(
         self,
         http: httpx.AsyncClient,
-        coords: Any,  # services.airport_service.CoordinateLookup
         timeout_s: float,
+        catalog: _IcaoLookup,
     ) -> None:
         self._http = http
-        self._coords = coords
         self._timeout = timeout_s
+        self._catalog = catalog
 
     @property
     def name(self) -> str:
         return "AviationWeather"
 
     async def fetch(self, codes: Sequence[IATA]) -> ContextOutcome:
-        fields: dict[str, dict[str, Any]] = {}
+        contexts: dict[str, dict[str, Any]] = {}
         failures: list[ProviderFailure] = []
 
+        if not codes:
+            return ContextOutcome(fields=contexts, failures=failures, warnings={})
+
+        code_to_icao: dict[str, str] = {}
         for code in codes:
-            icao = self._coords.icao_for(code)
-            if not icao:
-                failures.append(
-                    ProviderFailure(provider=self.name, error=f"No ICAO mapping for {code}")
-                )
-                continue
+            airport = self._catalog.get(code)
+            if airport and airport.icao_code:
+                code_to_icao[code] = airport.icao_code
 
-            try:
-                resp = await self._http.get(
-                    self._URL,
-                    params={"ids": icao, "format": "json"},
-                    timeout=self._timeout,
-                )
-                resp.raise_for_status()
-                data = resp.json()
+        if not code_to_icao:
+            return ContextOutcome(fields=contexts, failures=failures, warnings={})
 
-                if not data:
+        icao_str = ",".join(code_to_icao.values())
+
+        try:
+            resp = await self._http.get(
+                self._URL,
+                params={"ids": icao_str, "format": "json"},
+                timeout=self._timeout,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+            if not isinstance(data, list):
+                failures.append(ProviderFailure(provider=self.name, error="Unexpected response format"))
+                return ContextOutcome(fields=contexts, failures=failures, warnings={})
+
+            icao_to_iata = {v: k for k, v in code_to_icao.items()}
+
+            metars_by_icao: dict[str, dict[str, Any]] = {}
+            for metar in data:
+                icao_id = metar.get("icaoId")
+                if icao_id and icao_id not in metars_by_icao:
+                    metars_by_icao[icao_id] = metar
+
+            for code, icao in code_to_icao.items():
+                metar = metars_by_icao.get(icao)
+                if not metar:
                     failures.append(
                         ProviderFailure(provider=self.name, error=f"No weather data for {code}")
                     )
                     continue
 
-                # The API returns a list of METARs, usually the latest first
-                metar = data[0]
-                
                 flight_category = metar.get("fltcat", "Unknown")
                 wind_dir = metar.get("wdir", "VRB")
                 wind_spd = metar.get("wspd", 0)
@@ -70,7 +90,7 @@ class AviationWeatherProvider:
                 obs_time = str(metar.get("obsTime", "Unknown"))
                 raw_ob = metar.get("rawOb", "")
 
-                fields[code] = {
+                contexts[code] = {
                     "weather": WeatherContext(
                         flight_category=flight_category,
                         wind=wind,
@@ -80,11 +100,11 @@ class AviationWeatherProvider:
                     )
                 }
 
-            except (httpx.TransportError, httpx.HTTPStatusError) as exc:
-                logger.warning("Weather request failed for %s: %s", code, exc)
-                failures.append(ProviderFailure(provider=self.name, error=str(exc)))
-            except (ValueError, KeyError, IndexError) as exc:
-                logger.warning("Weather parse failed for %s: %s", code, exc)
-                failures.append(ProviderFailure(provider=self.name, error=f"Parse error: {exc}"))
+        except (httpx.TransportError, httpx.HTTPStatusError) as exc:
+            logger.warning("Weather request failed: %s", exc)
+            failures.append(ProviderFailure(provider=self.name, error=str(exc)))
+        except (ValueError, KeyError, IndexError) as exc:
+            logger.warning("Weather parse failed: %s", exc)
+            failures.append(ProviderFailure(provider=self.name, error=f"Parse error: {exc}"))
 
-        return ContextOutcome(fields=fields, failures=failures)
+        return ContextOutcome(fields=contexts, failures=failures, warnings={})

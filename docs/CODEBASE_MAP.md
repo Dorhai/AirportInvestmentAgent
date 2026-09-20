@@ -6,9 +6,9 @@ This file is a navigation map for developers and coding agents.
 
 Use it before multi-file changes.
 
-For product documentation see README.md.
+For product documentation see [README.md](../README.md) and [PRODUCT.md](PRODUCT.md).
 
-For architectural reasoning and tradeoffs see docs/architecture.md.
+For architectural reasoning and tradeoffs see [architecture.md](architecture.md).
 
 ---
 
@@ -220,13 +220,13 @@ Deterministic score driver breakdowns (congestion, unmet demand, capacity pressu
 
 Capacity-pressure proxy.
 
+### t100.py
+
+Pure analytics functions for BTS T-100 trailing window aggregation.
+
 ### long_haul.py
 
-Long-haul classification and percentage.
-
-Owns:
-
-- `calculate_long_haul_percentage(df, ...)` — computes weighted long-haul percentages from BTS T-100 data.
+Pure analytics functions for BTS T-100 Segment bulk file summarization.
 
 ### opportunity.py
 
@@ -279,38 +279,71 @@ Owns:
 - merge_outcomes() — combines multiple ProviderOutcomes into one AirportMetrics per code
 - merge_context_outcomes() — combines multiple ContextOutcomes into one AirportContext per code
 
-### aviation.py
+### aviation_weather.py
 
-Live aviation data implementation.
-
-Owns:
-
-- OpenSkyProvider — fetches departure flights from OpenSky Network (OAuth2 Bearer), computes long_haul_flights and total_departures over departures with resolvable destinations. Handles 429 retries and chunks requests over a configurable window.
-- opensky_auth.py — OpenSkyTokenManager (OAuth2 client credentials, cached ~30 min)
-- FaaNasProvider — fetches FAA NAS delay status XML, returns DelayProgram data (as ContextProvider)
-- DelayProgram model
-
-### fallback.py
-
-Clearly labeled sample-data fallback.
+Live aviation weather provider.
 
 Owns:
 
-- SampleProvider — loads data/sample_airports.json, returns Sample-origin data
-- CompositeProvider — runs live providers concurrently then sample, returns ordered outcomes for merge
+- AviationWeatherProvider — fetches METAR data from NOAA AWC, batched by ICAO.
+
+### composite.py
+
+Live-API-only data merge.
+
+Owns:
+
+- CompositeProvider — runs live providers concurrently, returns ordered outcomes for merge
 - ContextComposite — runs context providers concurrently, returns ordered outcomes for merge
 
-### bts_t100.py
+### bts_t100_origin.py
 
-BTS T-100 Segment file provider.
+BTS T-100 Segment by Origin provider.
 
 Owns:
 
-- BtsT100FileProvider — discovers CSV/ZIP in `backend/data/raw/bts/`, normalizes columns, filters to supported peers, builds a per-origin index, and computes weighted long-haul percentages from performed departures. Long-haul reports are computed lazily on demand.
+- BtsT100OriginProvider — fetches live aggregated monthly data via Socrata API.
 
-### faa_bulk.py (and others)
+### bts_t100_segment_file.py
 
-Other providers include `FaaAcaisFileProvider`, `FaaAtadsFileProvider`, and `OpenFlightsRoutesProvider`. These return empty fields (soft miss) rather than failing if a specific airport is missing from the cache.
+BTS T-100 Segment bulk file provider.
+
+Owns:
+
+- BtsT100SegmentFileProvider — parses and indexes the bulk CSV/ZIP file for accurate long-haul metrics.
+
+### bts_ontime_bulk.py
+
+BTS On-Time Performance bulk CSV provider.
+
+Owns:
+
+- BtsOnTimeBulkProvider — adapts the BtsOnTimeService to provide delay percentages and average delay minutes for scoring.
+
+### bts_national.py
+
+BTS National Traffic provider.
+
+Owns:
+
+- BtsNationalTrafficProvider — fetches live national totals from Socrata (jqx4-4iha).
+
+### ntad.py
+
+NTAD Aviation Facilities provider.
+
+Owns:
+
+- NtadFacilitiesProvider — fetches airport catalog and facility context from ArcGIS.
+
+### faa_nas.py
+
+FAA NAS delay status provider.
+
+Owns:
+
+- FaaNasProvider — fetches FAA NAS delay status XML, returns DelayProgram data (as ContextProvider)
+- DelayProgram model
 
 Providers retrieve and normalize data.
 
@@ -328,8 +361,7 @@ Coordinates airport data retrieval.
 
 Owns:
 
-- CoordinateLookup — loads data/ourairports_airports.csv (global ICAO coords) with data/airport_coords.csv overlay for supported airports; provides get(icao) and icao_for(iata)
-- AirportCatalog — loads sample_airports.json, returns full Airport model by IATA code
+- AirportCatalog — refreshed from NTAD, returns full Airport model by IATA code
 
 ### analysis_service.py
 
@@ -476,7 +508,7 @@ Frontend representations of backend response contracts.
 
 chat.ts — re-exports generated API types and defines the Block discriminated union and Turn interface.
 
-api.generated.ts — auto-generated from openapi.json via openapi-typescript.
+api.generated.ts — auto-generated from backend/openapi.json via openapi-typescript.
 
 Do not put calculations here.
 
@@ -601,7 +633,7 @@ Do not scan or rewrite unrelated areas.
 
 # When To Update This File
 
-Update CODEBASE_MAP.md when:
+Update docs/CODEBASE_MAP.md when:
 
 - modules move
 - responsibility moves between layers

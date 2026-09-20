@@ -76,13 +76,13 @@ Do not create unnecessary wrapper files.
 
 Before making substantial multi-file changes, read:
 
-CODEBASE_MAP.md
+docs/CODEBASE_MAP.md
 
 Use it to identify the correct layer and canonical files.
 
 Do not blindly search the entire repository if the map already identifies the responsible module.
 
-If architecture, responsibilities, important files, or major execution flows change, update CODEBASE_MAP.md.
+If architecture, responsibilities, important files, or major execution flows change, update docs/CODEBASE_MAP.md.
 
 Minor implementation changes do not require updating the map.
 

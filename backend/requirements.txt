@@ -1,5 +1,7 @@
-fastapi
-uvicorn
-pydantic
-pydantic-settings
-httpx
+# Runtime deps (pip install -r requirements.txt). For a locked tree use: uv sync
+fastapi>=0.141.1
+uvicorn>=0.53.0
+pydantic>=2.13.5
+pydantic-settings>=2.15.0
+httpx>=0.28.1
+pandas>=2.2.0

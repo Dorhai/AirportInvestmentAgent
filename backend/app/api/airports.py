@@ -6,8 +6,8 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Request
 
 from app.core.exceptions import UnknownAirportError
-from app.models.airport import IATA, REGIONS, SUPPORTED
-from app.models.chat import ComparisonResult, ComparisonRow, RankingResult, LongHaulResult
+from app.models.airport import IATA, REGIONS, normalize_iata
+from app.models.chat import ComparisonResult, ComparisonRow, RankingResult
 from app.models.context import AirportContext
 from app.models.metrics import AirportMetrics, Present
 from app.models.score import AirportScore, ScoringMethodology
@@ -22,10 +22,10 @@ def _get_analysis(request: Request) -> AnalysisService:
 
 
 def _validate_code(code: str) -> IATA:
-    upper = code.upper()
-    if upper not in SUPPORTED:
-        raise UnknownAirportError(upper)
-    return upper  # type: ignore[return-value]
+    try:
+        return normalize_iata(code)
+    except ValueError as exc:
+        raise UnknownAirportError(code) from exc
 
 
 # ------------------------------------------------------------------
@@ -41,7 +41,7 @@ class AirportMetricsResponse(BaseModel):
 async def get_airport_metrics(code: str, request: Request) -> AirportMetricsResponse:
     iata = _validate_code(code)
     analysis = _get_analysis(request)
-    universe = await analysis.universe()
+    universe = await analysis.universe([iata])
 
     dossier = universe.dossiers.get(iata)
     if dossier is None:
@@ -58,7 +58,7 @@ async def get_airport_metrics(code: str, request: Request) -> AirportMetricsResp
 async def get_airport_score(code: str, request: Request) -> AirportScore:
     iata = _validate_code(code)
     analysis = _get_analysis(request)
-    universe = await analysis.universe()
+    universe = await analysis.universe([iata])
 
     score = universe.scores.get(iata)
     if score is None:
@@ -72,28 +72,21 @@ async def get_airport_score(code: str, request: Request) -> AirportScore:
 
 @router.get("/airports/{code}/long-haul")
 async def get_airport_long_haul(
-    code: str, 
+    code: str,
     request: Request,
-    year: int | None = None,
-    start_year: int | None = None,
-    end_year: int | None = None,
     threshold_miles: float = 3000.0,
-    passenger_only: bool = False,
 ) -> dict:
+    from app.agent.tools import execute
+    from app.agent.llm import ToolCall
+
     iata = _validate_code(code)
     analysis = _get_analysis(request)
-    
-    if year is not None:
-        start_year = year
-        end_year = year
-        
-    return analysis.long_haul_report(
-        code=iata,
-        threshold_miles=threshold_miles,
-        start_year=start_year,
-        end_year=end_year,
-        passenger_only=passenger_only,
+    universe = await analysis.universe([iata])
+    result = execute(
+        ToolCall(name="get_long_haul_percentage", arguments={"code": iata}),
+        universe,
     )
+    return result.model_dump(mode="json")
 
 
 # ------------------------------------------------------------------
@@ -134,11 +127,11 @@ async def compare_airports(
     body: CompareRequest, request: Request,
 ) -> ComparisonResult:
     analysis = _get_analysis(request)
-    universe = await analysis.universe()
+    codes = [_validate_code(c) for c in body.airport_codes]
+    universe = await analysis.universe(codes)
 
     rows: list[ComparisonRow] = []
-    for code in body.airport_codes:
-        iata = _validate_code(code)
+    for iata in codes:
         dossier = universe.dossiers.get(iata)
         score = universe.scores.get(iata)
         if dossier is None or score is None:
@@ -200,14 +193,20 @@ async def get_region_ranking(region: str, request: Request) -> RankingResult:
         )
 
     analysis = _get_analysis(request)
-    universe = await analysis.universe()
+    universe = await analysis.universe(regions=[region_lower])
+
+    region_codes_set = set()
+    catalog = getattr(universe, "catalog", None)
+    if catalog is not None:
+        region_codes_set = set(catalog.get_cached_region_codes(region_lower))
 
     region_scores: list[AirportScore] = []
     for code, dossier in universe.dossiers.items():
-        if dossier.airport.state in states:
-            score = universe.scores.get(code)
-            if score is not None:
-                region_scores.append(score)
+        if dossier.airport.state not in states and code not in region_codes_set:
+            continue
+        score = universe.scores.get(code)
+        if score is not None:
+            region_scores.append(score)
 
     ranked = rank(region_scores)
     codes = [s.airport_code for s in ranked]
@@ -217,7 +216,7 @@ async def get_region_ranking(region: str, request: Request) -> RankingResult:
         snapshot_at=universe.snapshot_at,
         ranked=ranked,
         region=region_lower,
-        peer_note=f"Ranked {len(ranked)} airports in {region_lower}: {', '.join(codes)}"
+        peer_note=f"Ranked {len(ranked)} airports in {region_lower} from the loaded universe: {', '.join(codes)}"
         if ranked
-        else f"No airports found in {region_lower}.",
+        else f"No airports in {region_lower} have complete BTS T-100 data.",
     )

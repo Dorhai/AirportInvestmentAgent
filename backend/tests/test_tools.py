@@ -148,6 +148,10 @@ class TestToolRegistry:
             "explain_unmet_demand",
             "explain_capacity_pressure",
             "rank_by_metric",
+            "get_bts_delay_metrics",
+            "compare_bts_airport_delays",
+            "get_bts_delay_causes",
+            "get_bts_delay_trend",
         }
         assert expected == set(TOOLS)
 
@@ -243,17 +247,63 @@ class TestRankRegion:
 
 
 class TestGetLongHaulPercentage:
-    def test_returns_datum(self) -> None:
-        call = ToolCall(
-            name="get_long_haul_percentage", arguments={"code": "BOS"}
+    def test_absent_long_haul_with_proxies(self) -> None:
+        u = _universe()
+        # Add proxies to BOS
+        from app.models.metrics import Present, Live, Absent
+        origin = Live(source="BTS T-100", period="2023", fetched_at="now")
+        u.dossiers["BOS"] = u.dossiers["BOS"].model_copy(
+            update={
+                "long_haul_pct": Absent(reason="NOT_PUBLISHED", detail="test", attempted=()),
+                "metrics": u.dossiers["BOS"].metrics.model_copy(
+                    update={
+                        "international_departures": Present[int](value=10, origin=origin),
+                        "total_departures": Present[int](value=100, origin=origin),
+                        "average_flight_distance_sm": Present[float](value=1500.0, origin=origin),
+                    }
+                )
+            }
         )
-        result = execute(call, _universe())
+        call = ToolCall(name="get_long_haul_percentage", arguments={"code": "BOS"})
+        result = execute(call, u)
+        assert isinstance(result, LongHaulResult)
+        assert isinstance(result.long_haul_pct, Absent)
+        assert result.long_haul_pct.reason == "NOT_PUBLISHED"
+        assert result.international_departures == 10.0
+        assert result.international_departure_share_pct == 10.0
+        assert result.live_average_distance_miles == 1500.0
+        assert "Live proxies" in result.basis
+
+    def test_present_long_haul_with_summary(self) -> None:
+        u = _universe()
+        from app.models.metrics import Present, Live
+        from app.analytics.long_haul import LongHaulSummary
+        origin = Live(source="BTS T-100 Segment", period="2023", fetched_at="now")
+        summary = LongHaulSummary(
+            pct=25.0,
+            total_departures=100.0,
+            long_haul_departures=25.0,
+            unique_destinations=10,
+            long_haul_destinations=2,
+            average_distance_miles=2000.0,
+            max_distance_miles=3500.0,
+            top_long_haul_routes=[],
+            start_year=2023,
+            end_year=2023,
+        )
+        u.dossiers["BOS"] = u.dossiers["BOS"].model_copy(
+            update={
+                "long_haul_pct": Present[float](value=25.0, origin=origin),
+                "long_haul_summary": summary,
+            }
+        )
+        call = ToolCall(name="get_long_haul_percentage", arguments={"code": "BOS"})
+        result = execute(call, u)
         assert isinstance(result, LongHaulResult)
         assert isinstance(result.long_haul_pct, Present)
-        assert result.long_haul_pct.value == pytest.approx(12.5)
-        assert result.threshold_statute_miles == 3000.0
-        assert result.basis is not None
-        assert "departures with a known destination" in result.basis
+        assert result.long_haul_pct.value == 25.0
+        assert result.average_distance_miles == 2000.0
+        assert "Long-haul from bulk file" in result.basis
 
 
 class TestGetUnmetDemand:

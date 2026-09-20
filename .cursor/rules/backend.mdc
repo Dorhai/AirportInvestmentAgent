@@ -49,4 +49,4 @@ Tests should directly cover deterministic calculations.
 
 Prefer dependency injection through function/class arguments over complex frameworks.
 
-Before adding a new backend module, check CODEBASE_MAP.md to determine whether an existing module already owns that responsibility.
+Before adding a new backend module, check docs/CODEBASE_MAP.md to determine whether an existing module already owns that responsibility.

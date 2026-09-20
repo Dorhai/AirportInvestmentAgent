@@ -109,3 +109,16 @@ def test_resolve_airport_scope_ordinal_on_ranking() -> None:
     scope = resolve_airport_scope("Tell me about the first one", session, frame)
     assert scope.source == "referent"
     assert list(scope.codes) == ["BOS"]
+
+def test_resolve_airport_scope_first_turn_region() -> None:
+    session = Session(conversation_id="test")
+    frame = ConversationFrame(
+        airports=[],
+        region=None,
+        ranked_airports=[],
+    )
+    
+    scope = resolve_airport_scope("Which airports in New England are strong candidates?", session, frame)
+    assert scope.source == "last_turn"  # Fallback branch
+    assert scope.region == "new_england"
+    assert list(scope.codes) == []

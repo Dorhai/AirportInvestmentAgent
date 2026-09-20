@@ -1,6 +1,6 @@
 import type { RankingBlock, AirportScore } from "@/types/chat";
 import { formatAirportLabel } from "@/lib/airportDisplay";
-import { rankingMetricLabel } from "@/lib/rankingMetricLabels";
+import { rankingMetricLabel, RANKING_DISPLAY_LIMIT } from "@/lib/rankingMetricLabels";
 
 type PresentOrAbsent = { kind: "present"; value: number } | { kind: "absent" };
 
@@ -28,7 +28,12 @@ function rankedValue(score: AirportScore, metric: string): PresentOrAbsent {
 
 export function RankingTable({ ranked, region, metric }: RankingBlock) {
   const metricName = rankingMetricLabel(metric);
-  const subtitle = `Ranked by ${metricName} · ${ranked.length} airports`;
+  const subtitle =
+    ranked.length > RANKING_DISPLAY_LIMIT
+      ? `Top ${RANKING_DISPLAY_LIMIT} of ${ranked.length} airports · ranked by ${metricName}`
+      : `Ranked by ${metricName} · ${ranked.length} airports`;
+
+  const displayRanked = ranked.slice(0, RANKING_DISPLAY_LIMIT);
 
   return (
     <div className="border border-ink bg-white">
@@ -47,7 +52,7 @@ export function RankingTable({ ranked, region, metric }: RankingBlock) {
         </div>
 
         <ol className="flex flex-col gap-1">
-          {ranked.map((score, i) => (
+          {displayRanked.map((score, i) => (
             <li
               key={score.airport_code}
               className="flex items-center gap-3 border border-hairline px-3 py-2.5 bg-white hover:bg-paper/50 hover:border-ink/30 transition-colors"

@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Cloud } from "lucide-react";
+import { AlertTriangle, Cloud, Building2 } from "lucide-react";
 import type { components } from "@/types/api.generated";
 
 type AirportContext = components["schemas"]["AirportContext"];
@@ -21,8 +21,9 @@ export function AirportContextBanner({ context }: AirportContextBannerProps) {
 
   const hasNas = !!context.nas_delay_program;
   const hasWeather = isUsableWeather(context.weather);
+  const hasFacility = !!context.facility;
 
-  if (!hasNas && !hasWeather) return null;
+  if (!hasNas && !hasWeather && !hasFacility) return null;
 
   return (
     <div className="flex flex-col gap-2 mb-4">
@@ -37,15 +38,27 @@ export function AirportContextBanner({ context }: AirportContextBannerProps) {
         </Alert>
       )}
 
-      {hasWeather && (
+      {(hasWeather || hasFacility) && (
         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
-          <div className="flex items-center gap-1">
-            <Cloud className="h-3 w-3" />
-            <span>
-              {context.weather?.flight_category} • {context.weather?.wind} • Vis:{" "}
-              {context.weather?.visibility}
-            </span>
-          </div>
+          {hasWeather && (
+            <div className="flex items-center gap-1">
+              <Cloud className="h-3 w-3" />
+              <span>
+                {context.weather?.flight_category} • {context.weather?.wind} • Vis:{" "}
+                {context.weather?.visibility}
+              </span>
+            </div>
+          )}
+          {hasFacility && (
+            <div className="flex items-center gap-1">
+              <Building2 className="h-3 w-3" />
+              <span>
+                {context.facility?.acreage ? `${context.facility.acreage.toLocaleString()} acres` : "Unknown size"} • 
+                Class {context.facility?.part139_class || "?"} • 
+                Tower: {context.facility?.tower_type || "None"}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>

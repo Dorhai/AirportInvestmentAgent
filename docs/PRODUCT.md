@@ -19,7 +19,7 @@ Every metric, score, and ranking comes from deterministic Python over public avi
 Users ask plain language questions (text or voice) to a chat UI. The assistant returns a natural-language answer plus structured cards (scores, comparisons, rankings, KPIs) when relevant. Users follow up leveraging conversational context.
 
 ## Capabilities and Constraints
-- Supported airports (peer universe): BOS, BDL, PVD, PWM, LAX, SNA, ANC, SFO, JFK.
+- Airports: any valid three-letter IATA code with BTS/NTAD coverage; universe loads on demand from chat or REST requests.
 - Supported regions: new_england, west_coast, alaska, northeast, california.
 - Voice input requires confirmation on low confidence (placed in text box instead of sent automatically).
 - Voice output has a text fallback.
@@ -32,6 +32,6 @@ Users ask plain language questions (text or voice) to a chat UI. The assistant r
 - Institutional analyst tool—absolutely no gamification or hype in UX copy or visuals.
 
 ## Evidence on Hand
-- Data providers: OpenSky, FAA NAS (with sample fallback data).
+- Data providers: BTS (live + optional bulk CSVs), NTAD, FAA NAS, NOAA Aviation Weather.
 - Existing React components defining analytical evidence: `AirportScoreCard`, `AirportComparison`, `RankingTable`, `SimulationCard`, `KpiCard`, `ConfirmationPrompt`, `WarningsList`. 
 - Metrics surface confidence, warnings, sources, data freshness when backend provides them.

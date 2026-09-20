@@ -16,7 +16,7 @@ Identify:
 - expected behavior
 - relevant architecture layer
 
-Read CODEBASE_MAP.md if the feature crosses multiple layers.
+Read docs/CODEBASE_MAP.md if the feature crosses multiple layers.
 
 ## Step 2 — Static Checks
 

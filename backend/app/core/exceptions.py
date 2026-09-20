@@ -6,7 +6,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app.models.airport import SUPPORTED
+import re
+
+from app.models.airport import normalize_iata
 
 
 # ---------------------------------------------------------------------------
@@ -49,12 +51,15 @@ def _format_validation_errors(exc: ValidationError) -> list[str]:
         loc = " → ".join(str(part) for part in err["loc"])
         raw_input = err.get("input")
 
-        if raw_input is not None and str(raw_input) not in SUPPORTED:
-            messages.append(
-                f"{raw_input} is not a supported or recognized airport code."
-            )
-        else:
-            messages.append(f"{loc}: {err['msg']}")
+        if raw_input is not None:
+            try:
+                normalize_iata(str(raw_input))
+            except ValueError:
+                messages.append(
+                    f"{raw_input} is not a valid IATA airport code (use 3 letters)."
+                )
+                continue
+        messages.append(f"{loc}: {err['msg']}")
     return messages
 
 

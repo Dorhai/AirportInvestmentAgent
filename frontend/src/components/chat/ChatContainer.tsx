@@ -8,10 +8,9 @@ interface ChatContainerProps {
   turns: Turn[];
   onSend: (text: string, confidence?: number) => void;
   isPending: boolean;
-  streamingPhase?: string | null;
 }
 
-export function ChatContainer({ turns, onSend, isPending, streamingPhase }: ChatContainerProps) {
+export function ChatContainer({ turns, onSend, isPending }: ChatContainerProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,15 +42,10 @@ export function ChatContainer({ turns, onSend, isPending, streamingPhase }: Chat
             <div key={i} className="flex flex-col gap-2">
               {turn.role === "user" ? (
                 <div className="border-l-2 border-ink pl-4 py-1">
-                  <span className="text-xs font-mono font-bold text-ink/80 uppercase block mb-1">Analyst Query</span>
                   <p className="text-ink font-mono text-sm whitespace-pre-wrap">{turn.text}</p>
                 </div>
               ) : (
-                <div className="border border-hairline bg-white p-4 shadow-sm relative">
-                  <span className="absolute -top-2 left-4 bg-white px-2 text-xs font-mono font-bold text-ink/80 uppercase border border-hairline">
-                    Intelligence Report
-                  </span>
-                  
+                <div className="border border-hairline bg-white p-4 shadow-sm">
                   {turn.response ? (
                     <ChatMessage
                       blocks={presentResponse(turn.response)}
@@ -64,18 +58,6 @@ export function ChatContainer({ turns, onSend, isPending, streamingPhase }: Chat
               )}
             </div>
           ))}
-          
-          {isPending && (
-            <div className="border border-hairline bg-white p-4 relative animate-pulse">
-              <span className="absolute -top-2 left-4 bg-white px-2 text-xs font-mono font-bold text-ink-muted uppercase border border-hairline">
-                {streamingPhase === "tool_select" ? "Analyzing Query" : 
-                 streamingPhase === "tools" ? "Fetching Data" : 
-                 streamingPhase === "compose" ? "Drafting Report" : "Processing"}
-              </span>
-              <div className="h-4 bg-hairline w-1/4 mt-2"></div>
-              <div className="h-4 bg-hairline w-1/2 mt-2"></div>
-            </div>
-          )}
         </div>
       </div>
       

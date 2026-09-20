@@ -212,6 +212,8 @@ _CORE_SCORING_KPI_FIELDS: tuple[str, ...] = (
 _METRIC_FIELDS: tuple[str, ...] = _CORE_SCORING_KPI_FIELDS + (
     "long_haul_flights",
     "total_departures",
+    "international_departures",
+    "average_flight_distance_sm",
 )
 
 
@@ -225,6 +227,8 @@ class AirportMetrics(BaseModel, frozen=True):
     average_delay_minutes: DatumFloat
     long_haul_flights: DatumInt
     total_departures: DatumInt
+    international_departures: DatumInt = Absent(reason="NOT_PUBLISHED", detail="default", attempted=())
+    average_flight_distance_sm: DatumFloat = Absent(reason="NOT_PUBLISHED", detail="default", attempted=())
     warnings: list[str] = []
 
     @computed_field  # type: ignore[prop-decorator]
@@ -308,12 +312,14 @@ class AirportMetrics(BaseModel, frozen=True):
 
 
 from app.models.context import AirportContext
+from app.analytics.long_haul import LongHaulSummary
 
 class AirportDossier(BaseModel, frozen=True):
     airport: Airport
     metrics: AirportMetrics
     passenger_growth: DatumFloat
     long_haul_pct: DatumFloat
+    long_haul_summary: LongHaulSummary | None = None
     unmet_demand_index: DatumFloat
     context: AirportContext
     snapshot_at: str

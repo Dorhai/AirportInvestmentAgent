@@ -4,7 +4,9 @@
 
 **Problem:** Analysts ask free-form questions about US airport **expansion pressure**; every number must be Python-computed from public-ish aviation data.
 
-**Peer universe (9 airports):** BOS, BDL, PVD, PWM, LAX, SNA, ANC, SFO, JFK ([`models/airport.py`](../backend/app/models/airport.py)).
+**Airports:** Any valid US IATA code the catalog and providers can resolve (NTAD + BTS). The **loaded universe** is dynamic: airports mentioned in the question, follow-up referents, or Part-139 facilities preloaded for region questions. Peer min/max bounds for scoring are computed across that frozen set at build time ([`analysis_service.py`](../backend/app/services/analysis_service.py)).
+
+**Regions** (for ranking): `new_england`, `west_coast`, `alaska`, `northeast`, `california` — state filters in [`models/airport.py`](../backend/app/models/airport.py).
 
 **Two entry points:**
 - **Chat:** SSE [`POST /api/chat`](../backend/app/api/chat.py) → [`Orchestrator.turn_stream`](../backend/app/agent/orchestrator.py)
@@ -47,7 +49,7 @@ flowchart LR
 - **AnalysisService:** TTL-cached **Universe** build — fetch, merge, dossier, score ([`analysis_service.py`](../backend/app/services/analysis_service.py)).
 - **Analytics:** pure deterministic KPIs and proxies.
 - **Scoring:** normalization + weighted opportunity index.
-- **Providers:** fetch + normalize; **CompositeProvider** live-then-sample merge ([`fallback.py`](../backend/app/providers/fallback.py)).
+- **Providers:** fetch + normalize; **CompositeProvider** live API merge ([`composite.py`](../backend/app/providers/composite.py)).
 - **Frontend:** render API payloads; **no business math** ([`AirportScoreCard.tsx`](../frontend/src/chat/AirportScoreCard.tsx) etc.)
 
 ## 3. Data model and provenance
@@ -86,7 +88,7 @@ Canonical weights **only** in [`SCORING_WEIGHTS`](../backend/app/scoring/expansi
 ### 4.3 Related indices
 
 - **Unmet demand index:** separate proxy, 50% growth + 25% delay + 25% congestion ([`opportunity.py`](../backend/app/analytics/opportunity.py)). Used by `get_unmet_demand` / `explain_unmet_demand`, **not** in opportunity weight sum.
-- **Long-haul %:** departures-based from merged metrics; BTS T-100 for richer destination reports on demand.
+- **Long-haul %:** From optional BTS T-100 Segment bulk file ([`BtsT100SegmentFileProvider`](../backend/app/providers/bts_t100_segment_file.py), `BTS_T100_SEGMENT_PATH`). Live T-100 origin summary alone does not include segment distance; without the file, long-haul may be absent or proxy-based per dossier build.
 - **Simulation:** [`Universe.simulate`](../backend/app/services/analysis_service.py) — adjusts passenger growth by user `pct`, re-runs `score_dossier` against **same** peer bounds.
 
 ### 4.4 Confidence
@@ -99,10 +101,11 @@ Canonical weights **only** in [`SCORING_WEIGHTS`](../backend/app/scoring/expansi
 
 ## 5. Data sources and ingestion
 
-- **Live:** OpenSky (OAuth), FAA NAS (delay programs)
-- **File/cache:** FAA ACAIS enplanements, FAA ATADS operations, OpenFlights routes, BTS T-100, OurAirports coords
-- **Fallback:** `SampleProvider` after live attempts — failures recorded in `ProviderFailure` list on Universe
-- **Merge:** `merge_outcomes` / `merge_context_outcomes` — first-wins or ordered merge per field (see [`base.py`](../backend/app/providers/base.py))
+- **Live HTTP:** BTS T-100 by Origin, BTS National AFF, NTAD Aviation Facilities, Aviation Weather, FAA NAS (delay programs)
+- **Optional local bulk:** BTS On-Time CSV (`BTS_ONTIME_CSV_PATH`), BTS T-100 Segment CSV (`BTS_T100_SEGMENT_PATH`) — loaded at startup when configured
+- **Merge:** `merge_outcomes` / `merge_context_outcomes` — ordered merge per field (see [`base.py`](../backend/app/providers/base.py))
+
+Details: [data-sources/live-apis.md](data-sources/live-apis.md).
 
 ## 6. Where and how AI is used
 
@@ -118,7 +121,7 @@ Canonical weights **only** in [`SCORING_WEIGHTS`](../backend/app/scoring/expansi
 
 - **Input:** `screen_input` — injection notes, voice low-confidence confirm ([`guardrails.py`](../backend/app/agent/guardrails.py))
 - **Mention resolution:** alias map + IATA scan (deterministic)
-- **Conversation frame / airport scope:** [`airport_scope.py`](../backend/app/agent/airport_scope.py), [`session.py`](../backend/app/agent/session.py) (max 6 exchanges, TTL)
+- **Conversation frame / airport scope:** [`airport_scope.py`](../backend/app/agent/airport_scope.py), [`session.py`](../backend/app/agent/session.py) (max 6 exchanges, TTL). Region questions preload Part-139 airports via NTAD.
 - **Fallback tool plan:** if LLM picks no tools, [`plan_fallback_tools`](../backend/app/agent/follow_up.py)
 - **Output:** `verify_numbers` — warn when prose contains numbers not in evidence JSON; `scrub_guarantees` disclaimer
 
@@ -164,10 +167,10 @@ sequenceDiagram
 
 | Tradeoff | Choice | Benefit | Cost |
 |----------|--------|---------|------|
-| **Peer normalization** | Fixed 9-airport universe | Comparable scores/rankings within demo scope | Not nationally representative; bounds shift when peers change |
+| **Peer normalization** | Loaded universe (requested + context) | Comparable scores within the current snapshot | Not nationally representative; bounds shift when the loaded set changes |
 | **Capacity/congestion** | Operational proxies vs terminal square footage | Works with public FAA/OpenSky data | Not literal physical capacity; must label proxies in UI |
 | **Opportunity vs ROI** | Pressure index, not NPV | Honest scope for MVP | Cannot answer "will this project pay back?" |
-| **Live + sample merge** | CompositeProvider | Resilient demos when APIs fail | Mixed freshness; warnings/failures must be read |
+| **Live-first data** | HTTP providers + optional BTS bulk files | Auditable public sources | Missing fields when APIs time out or CSVs absent |
 | **No RAG** | Structured data only | Deterministic, testable | No citations from master plans/EIS PDFs |
 | **In-memory sessions** | TTL SessionStore | Simple deployment | No cross-device history |
 | **LLM + deterministic fallback** | Dual tool routing | Robust follow-ups | Two paths to maintain; doc must describe both |

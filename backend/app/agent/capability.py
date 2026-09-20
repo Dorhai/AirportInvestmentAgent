@@ -11,7 +11,15 @@ _DECLINE_HINTS: list[tuple[re.Pattern[str], str]] = [
     ),
     (
         re.compile(r"\b(route|routes|airline|airlines|slot|slots)\b", re.I),
-        "Route- and airline-level detail is not available. Use long-haul percentage, connectivity counts, or peer rankings instead.",
+        "Route- and airline-level detail is not available. Use peer rankings instead.",
+    ),
+    (
+        re.compile(r"\b(long haul|long-haul|route distance|flight distance)\b", re.I),
+        "Long-haul percentage is computed from the BTS T-100 Segment bulk file when configured. If absent, use the live average flight distance and international departure share as proxies.",
+    ),
+    (
+        re.compile(r"\b(delay|delays|on-time|on time)\b", re.I),
+        "Historical delay and congestion detail comes from the BTS On-Time CSV dataset when configured. If absent, delay fields will show as missing.",
     ),
     (
         re.compile(r"\b(losing passengers|competing airports|leakage)\b", re.I),

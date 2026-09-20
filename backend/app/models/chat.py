@@ -131,6 +131,10 @@ class LongHaulResult(ResultBase):
     average_distance_miles: float | None = None
     max_distance_miles: float | None = None
     top_long_haul_routes: list[dict[str, Any]] = []
+    international_departures: float | None = None
+    international_departure_share_pct: float | None = None
+    live_average_distance_miles: float | None = None
+    live_period: str | None = None
     source: str = "BTS T-100 Segment"
     calculation: str | None = None
     metadata: dict[str, Any] = {}
@@ -155,6 +159,31 @@ class ToolRejection(ResultBase):
     reason: str
 
 
+from app.analytics.bts_ontime import (
+    AirportDelayMetrics,
+    DelayCauseBreakdown,
+    DelayComparisonResult as BtsDelayComparisonResult,
+    MonthlyDelayPoint,
+)
+
+class DelayMetricsResult(ResultBase):
+    kind: Literal["delay_metrics"] = "delay_metrics"
+    metrics: AirportDelayMetrics
+
+class DelayComparisonResult(ResultBase):
+    kind: Literal["delay_comparison"] = "delay_comparison"
+    comparison: BtsDelayComparisonResult
+
+class DelayCausesResult(ResultBase):
+    kind: Literal["delay_causes"] = "delay_causes"
+    causes: DelayCauseBreakdown
+
+class DelayTrendResult(ResultBase):
+    kind: Literal["delay_trend"] = "delay_trend"
+    airport: str
+    direction: str
+    trend: list[MonthlyDelayPoint]
+
 ToolResult = Annotated[
     Union[
         MetricsResult,
@@ -167,6 +196,10 @@ ToolResult = Annotated[
         CongestionExplainResult,
         UnmetExplainResult,
         CapacityExplainResult,
+        DelayMetricsResult,
+        DelayComparisonResult,
+        DelayCausesResult,
+        DelayTrendResult,
         ToolRejection,
     ],
     Discriminator("kind"),

@@ -5,13 +5,22 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from app.models.airport import SUPPORTED
+from app.models.airport import normalize_iata
 from app.models.chat import ConfirmOption, Confirmation, ToolResult
 from app.agent.conversation_frame import ConversationFrame
 
 # ---------------------------------------------------------------------------
 # Mention resolution  (Guardrail 3)
 # ---------------------------------------------------------------------------
+
+# Common English/trigram false positives when scanning for IATA-shaped tokens.
+_MENTION_STOPWORDS: frozenset[str] = frozenset({
+    "AND", "ARE", "BUT", "CAN", "DAY", "DID", "FOR", "GET", "HAD", "HAS", "HER",
+    "HIM", "HIS", "HOW", "ITS", "LET", "MAN", "MAY", "NEW", "NOT", "NOW", "OFF",
+    "OLD", "ONE", "OUR", "OUT", "OWN", "PUT", "RUN", "SAY", "SHE", "THE", "TOO",
+    "TOP", "TRY", "TWO", "USE", "WAS", "WAY", "WHO", "WHY", "YET", "YOU", "ANY",
+    "AIR", "ANA",
+})
 
 _ALIAS_MAP: dict[str, str] = {
     "boston": "BOS",
@@ -52,11 +61,14 @@ def resolve_mentions(text: str) -> Resolved | Ambiguous:
     """Map free-text airport references to known IATA codes."""
     upper = text.upper()
 
-    # Direct IATA code matches
     found: list[str] = []
-    for code in SUPPORTED:
-        if code in upper:
-            found.append(code)
+    for match in re.findall(r"\b[A-Z]{3}\b", upper):
+        if match in _MENTION_STOPWORDS:
+            continue
+        try:
+            found.append(normalize_iata(match))
+        except ValueError:
+            continue
 
     lower = text.lower()
     for alias, code in _ALIAS_MAP.items():
@@ -83,6 +95,57 @@ _FOLLOW_UP_RE = re.compile(
     r"|capacity|congestion|unmet|long-haul)\b",
     re.IGNORECASE,
 )
+
+_ANALYTICAL_TOPIC_RE = re.compile(
+    r"\b("
+    r"airport|airports|terminal|gate|gates|expansion|candidate|candidates|"
+    r"congestion|capacity|delay|unmet|demand|long[- ]haul|passenger|routes?|airlines?|"
+    r"rank|ranking|opportunity|score|growth|simulate|benchmark|compare|versus|"
+    r"factor|factors|constraint|constraints|infrastructure|"
+    r"region|new england|west coast|northeast|alaska|california"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_CLARIFICATION_PHRASES = re.compile(
+    r"\b(tell me more|more detail|go on|continue|elaborate)\b",
+    re.IGNORECASE,
+)
+
+_NON_QUESTION_ACK = frozenset(
+    {"ok", "okay", "thanks", "thank you", "yes", "no", "yep", "nope", "cool", "great"}
+)
+
+
+def message_has_analytical_intent(message: str) -> bool:
+    """True when the user message plausibly asks for airport analytics."""
+    from app.agent.intent_routing import resolve_region
+
+    stripped = message.strip()
+    if not stripped:
+        return False
+
+    lower = stripped.lower()
+    if lower in _NON_QUESTION_ACK:
+        return False
+
+    mentions = resolve_mentions(message)
+    if isinstance(mentions, Resolved) and mentions.codes:
+        return True
+    if resolve_region(message):
+        return True
+    if _FOLLOW_UP_RE.search(message):
+        return True
+    if _ANALYTICAL_TOPIC_RE.search(message):
+        return True
+    if _CLARIFICATION_PHRASES.search(message):
+        return True
+    if re.search(r"\b(compare|versus|vs\.?|show me|list)\b", lower):
+        return True
+    if "?" in stripped and _ANALYTICAL_TOPIC_RE.search(message):
+        return True
+    return False
+
 
 def _get_airport_name(code: str, accumulated: list[ToolResult] | None) -> str | None:
     for ev in accumulated or []:

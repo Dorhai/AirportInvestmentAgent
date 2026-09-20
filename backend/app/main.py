@@ -13,16 +13,16 @@ from app.core.exceptions import register_exception_handlers
 from app.agent.llm import OpenAILLMClient
 from app.agent.orchestrator import Orchestrator
 from app.agent.session import SessionStore
-from app.providers.aviation import FaaNasProvider, OpenSkyProvider
+from app.providers.faa_nas import FaaNasProvider
 from app.providers.aviation_weather import AviationWeatherProvider
-from app.providers.openflights import OpenFlightsRoutesProvider
-from app.providers.opensky_auth import token_manager_from_settings
-from app.providers.bts_on_time import BtsOnTimeProvider
-from app.providers.faa_bulk import FaaAcaisFileProvider, FaaAtadsFileProvider
-from app.providers.bts_t100 import BtsT100FileProvider
-from app.providers.base import AviationProvider, ContextProvider
-from app.providers.fallback import CompositeProvider, ContextComposite, SampleProvider
-from app.services.airport_service import AirportCatalog, CoordinateLookup
+from app.providers.bts_t100_origin import BtsT100OriginProvider
+from app.providers.bts_ontime_bulk import BtsOnTimeBulkProvider
+from app.providers.bts_national import BtsNationalTrafficProvider
+from app.providers.bts_t100_segment_file import BtsT100SegmentFileProvider
+from app.services.bts_ontime_service import BtsOnTimeService
+from app.providers.ntad import NtadFacilitiesProvider
+from app.providers.composite import CompositeProvider, ContextComposite
+from app.services.airport_service import AirportCatalog
 from app.services.analysis_service import AnalysisService
 from app.services.tts_service import TTSService
 
@@ -76,52 +76,65 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    coords = CoordinateLookup()
-    catalog = AirportCatalog()
-    sample = SampleProvider()
-
-    async with httpx.AsyncClient() as http:
-        opensky = OpenSkyProvider(
-            http,
-            coords,
-            timeout_s=max(settings.HTTP_TIMEOUT_S, settings.OPENSKY_TIMEOUT_S),
-            token_manager=token_manager_from_settings(
-                http, timeout_s=settings.HTTP_TIMEOUT_S
-            ),
-            window_days=settings.OPENSKY_WINDOW_DAYS,
-            request_delay_s=settings.OPENSKY_REQUEST_DELAY_S,
+    async with httpx.AsyncClient(headers={"User-Agent": settings.HTTP_USER_AGENT}) as http:
+        ntad = NtadFacilitiesProvider(http, timeout_s=settings.BULK_HTTP_TIMEOUT_S)
+        catalog = AirportCatalog(source=ntad)
+        
+        t100 = BtsT100OriginProvider(
+            http, 
+            timeout_s=settings.BULK_HTTP_TIMEOUT_S,
+            app_token=settings.BTS_APP_ID, 
+            trailing_months=settings.BTS_TRAILING_MONTHS
         )
-        faa_nas = FaaNasProvider(http, timeout_s=settings.HTTP_TIMEOUT_S)
         
-        live_providers: list[AviationProvider] = []
-        if settings.BTS_ON_TIME_ENABLED:
-            live_providers.append(BtsOnTimeProvider(http, timeout_s=settings.HTTP_TIMEOUT_S))
-        live_providers.append(FaaAcaisFileProvider())
-        live_providers.append(FaaAtadsFileProvider())
+        ontime_service = None
+        on_time_bulk = None
+        ontime_source = settings.BTS_ONTIME_CSV_PATH or settings.BTS_ONTIME_DATA_DIR
+        if ontime_source:
+            ontime_service = BtsOnTimeService(ontime_source)
+            import asyncio
+            await asyncio.to_thread(ontime_service.load_sync)
+            on_time_bulk = BtsOnTimeBulkProvider(ontime_service, trailing_months=settings.BTS_TRAILING_MONTHS)
         
-        import asyncio
-        bts_t100 = await asyncio.to_thread(BtsT100FileProvider)
-        live_providers.append(bts_t100)
-        app.state.bts_t100 = bts_t100
-
-        if settings.OPENSKY_TRAFFIC_ENABLED and not bts_t100.is_loaded():
-            live_providers.append(opensky)
+        providers = [t100]
+        if on_time_bulk:
+            providers.append(on_time_bulk)
+            
+        composite = CompositeProvider(providers=providers)
         
-        composite = CompositeProvider(live=live_providers, sample=sample)
-        context_providers: list[ContextProvider] = [faa_nas]
+        context_providers = [
+            FaaNasProvider(http, timeout_s=settings.HTTP_TIMEOUT_S),
+            BtsNationalTrafficProvider(
+                http, 
+                timeout_s=settings.BULK_HTTP_TIMEOUT_S, 
+                app_token=settings.BTS_APP_ID,
+                trailing_months=settings.BTS_TRAILING_MONTHS
+            ),
+            ntad,
+        ]
+        
         if settings.WEATHER_ENABLED:
-            context_providers.append(AviationWeatherProvider(http, coords, timeout_s=settings.HTTP_TIMEOUT_S))
-        context_providers.append(OpenFlightsRoutesProvider())
-        
+            context_providers.append(
+                AviationWeatherProvider(http, timeout_s=settings.HTTP_TIMEOUT_S, catalog=catalog)
+            )
+            
         context_composite = ContextComposite(providers=context_providers)
+        
+        segment_file = None
+        if settings.BTS_T100_SEGMENT_PATH:
+            segment_file = BtsT100SegmentFileProvider(settings.BTS_T100_SEGMENT_PATH)
+            import asyncio
+            await asyncio.to_thread(segment_file.load_sync)
+            app.state.segment_file = segment_file
+        
         analysis = AnalysisService(
             composite=composite, 
             context_composite=context_composite, 
             catalog=catalog,
-            bts_provider=bts_t100
+            segment_file=segment_file,
+            ontime_service=ontime_service,
         )
 
-        app.state.coords = coords
         app.state.catalog = catalog
         app.state.analysis = analysis
         app.state.analysis_service = analysis

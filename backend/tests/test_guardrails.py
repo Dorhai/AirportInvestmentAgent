@@ -409,7 +409,7 @@ class TestPrompts:
         assert "USE TOOLS" in SYSTEM_PROMPT
 
     def test_system_prompt_mentions_long_haul(self) -> None:
-        assert "3 000" in SYSTEM_PROMPT or "3000" in SYSTEM_PROMPT or "3,000" in SYSTEM_PROMPT
+        assert "long-haul flight percentage is computed from the BTS T-100 Segment file" in SYSTEM_PROMPT
 
     def test_render_facts_empty(self) -> None:
         assert render_facts_digest([]) == ""
@@ -450,8 +450,10 @@ class _StubAnalysis:
     def __init__(self, u: Universe, delay: float = 0.0) -> None:
         self._u = u
         self._delay = delay
+        self._catalog = None
+        self._ontime_service = None
 
-    async def universe(self) -> Universe:
+    async def universe(self, codes=None, regions=None) -> Universe:
         if self._delay > 0:
             await asyncio.sleep(self._delay)
         return self._u
@@ -473,6 +475,37 @@ class TestOrchestrator:
             analysis=_StubAnalysis(_universe(), delay=universe_delay),  # type: ignore[arg-type]
             sessions=SessionStore(),
         )
+
+    @pytest.mark.asyncio
+    async def test_orchestrator_region_only_message(self) -> None:
+        # A region-only message should cause the orchestrator to load the region's codes
+        orch = self._make(
+            tool_calls=[[ToolCall(name="rank_region", arguments={"region": "new_england"})]],
+            responses=["Here is the New England ranking."],
+        )
+        
+        # We need a stub catalog on the analysis service to resolve regions
+        class StubCatalog:
+            async def region_codes(self, region: str):
+                return ["BOS", "PVD"], []
+        orch._analysis._catalog = StubCatalog()
+
+        req = ChatRequest(message="Rank New England airports", conversation_id="t_region_only")
+        session = orch._sessions.get_or_create("t_region_only")
+        
+        events = []
+        async for ev in orch.turn_stream(req):
+            events.append(ev)
+            
+        # The tool should have executed successfully because the universe was loaded with BOS and PVD
+        meta_events = [e for e in events if e.event == "meta"]
+        assert len(meta_events) == 1
+        meta_data = meta_events[0].data
+        assert "evidence" in meta_data
+        assert len(meta_data["evidence"]) == 1
+        ev = meta_data["evidence"][0]
+        assert ev["kind"] == "ranking"
+        assert ev["region"] == "new_england"
 
     @pytest.mark.asyncio
     async def test_orchestrator_multi_turn_scope_regression(self) -> None:
@@ -590,6 +623,34 @@ class TestOrchestrator:
         req2 = ChatRequest(message="Tell me more", conversation_id="s1")
         resp2 = await orch.turn(req2)
         assert resp2.evidence_origin in ("carried", "this_turn", "none")
+
+    @pytest.mark.asyncio
+    async def test_gibberish_after_ranking_runs_no_tools_or_evidence(self) -> None:
+        orch = self._make(
+            tool_calls=[
+                [ToolCall(name="rank_region", arguments={"region": "new_england"})],
+                [ToolCall(name="compare_airports", arguments={"codes": ["BOS", "PVD"]})],
+            ],
+            responses=[
+                "New England ranking summary.",
+                "I did not catch that—what would you like to explore next?",
+            ],
+        )
+        req1 = ChatRequest(
+            message="Which airports in New England are strong candidates for terminal expansion?",
+            conversation_id="gibberish-rank",
+        )
+        resp1 = await orch.turn(req1)
+        assert resp1.evidence_origin == "this_turn"
+        assert len(resp1.evidence) >= 1
+
+        req2 = ChatRequest(
+            message="johnny corner hello hello",
+            conversation_id="gibberish-rank",
+        )
+        resp2 = await orch.turn(req2)
+        assert resp2.evidence == []
+        assert resp2.evidence_origin == "carried"
 
     @pytest.mark.asyncio
     async def test_off_topic_turn_omits_carried_evidence_from_response(self) -> None:

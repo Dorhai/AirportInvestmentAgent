@@ -57,4 +57,4 @@ Do not automatically execute uncertain speech recognition results.
 
 Keep the visual design minimal, professional and readable.
 
-Before adding a new frontend component, check CODEBASE_MAP.md for the appropriate component group.
+Before adding a new frontend component, check docs/CODEBASE_MAP.md for the appropriate component group.

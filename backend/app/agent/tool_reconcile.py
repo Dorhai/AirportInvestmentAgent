@@ -26,12 +26,23 @@ def _airport_codes(message: str, calls: list[ToolCall]) -> list[str]:
     return codes
 
 
-def reconcile_tool_calls(message: str, calls: list[ToolCall]) -> list[ToolCall]:
+def reconcile_tool_calls(message: str, calls: list[ToolCall], has_ontime: bool = False) -> list[ToolCall]:
     """Use compare_airports for side-by-side congestion questions, not explain alone."""
     if not calls:
         return calls
 
     lower = message.lower()
+    
+    # Check if we should add delay comparison
+    if has_ontime and _COMPARE_RE.search(lower):
+        codes = _airport_codes(message, calls)
+        if len(codes) == 2:
+            names = {c.name for c in calls}
+            if "compare_airports" in names and "compare_bts_airport_delays" not in names:
+                # Add delay comparison tool
+                calls = list(calls)
+                calls.append(ToolCall(name="compare_bts_airport_delays", arguments={"airport_a": codes[0], "airport_b": codes[1]}))
+
     if not _COMPARE_RE.search(lower):
         return calls
 

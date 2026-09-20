@@ -1,0 +1,5 @@
+Year,Month,FlightDate,Origin,OriginCityName,Dest,DestCityName,DepDelay,DepDelayMinutes,DepDel15,ArrDelay,ArrDelayMinutes,ArrDel15,Cancelled,Diverted,CarrierDelay,WeatherDelay,NASDelay,SecurityDelay,LateAircraftDelay,Distance,Flights
+2025,1,2025-01-01,LAX,Los Angeles,SNA,Santa Ana,10.00,10.00,0.00,5.00,5.00,0.00,0.00,0.00,,,,,,100.00,1.00
+2025,1,2025-01-02,LAX,Los Angeles,SNA,Santa Ana,20.00,20.00,1.00,25.00,25.00,1.00,0.00,0.00,10.00,5.00,5.00,0.00,0.00,100.00,1.00
+2025,1,2025-01-03,LAX,Los Angeles,SNA,Santa Ana,,,,,,,1.00,0.00,,,,,,100.00,1.00
+2025,1,2025-01-04,SNA,Santa Ana,LAX,Los Angeles,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,,,,,,100.00,1.00

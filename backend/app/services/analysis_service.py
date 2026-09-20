@@ -6,29 +6,30 @@ import time
 from collections.abc import Sequence
 from typing import NewType, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.analytics.congestion import calculate_congestion_score, calculate_delay_pressure
 from app.analytics.capacity import calculate_capacity_pressure
 from app.analytics.demand import calculate_passenger_growth
-from app.analytics.long_haul import calculate_long_haul_percentage
 from app.analytics.opportunity import calculate_unmet_demand_index
 from app.core.config import settings
-from app.models.airport import IATA
+from app.models.airport import IATA, Airport, normalize_iata
 from app.models.metrics import (
     Absent,
     AirportDossier,
     AirportMetrics,
     DatumFloat,
+    Live,
     Present,
     fold_origins,
 )
 from app.models.context import AirportContext
 from app.models.score import AirportScore, PeerStats, ProviderFailure
 from app.providers.base import merge_outcomes, merge_context_outcomes
-from app.providers.fallback import CompositeProvider, ContextComposite
+from app.providers.composite import CompositeProvider, ContextComposite
 from app.scoring.expansion_score import score_dossier
 from app.scoring.normalization import normalize_min_max
+from app.services.bts_ontime_service import BtsOnTimeService
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +51,14 @@ class SimulationResult(BaseModel, frozen=True):
     delta_opportunity: float | None
 
 
-class Universe(BaseModel, frozen=True):
+class Universe(BaseModel, frozen=True, arbitrary_types_allowed=True):
     snapshot_at: str
     dossiers: dict[str, AirportDossier]
     scores: dict[str, AirportScore]
     peers: PeerStats
     failures: list[ProviderFailure]
-    long_haul_reports: dict[str, dict[str, Any]] = {}
+    ontime_service: BtsOnTimeService | None = Field(default=None, exclude=True)
+    catalog: Any | None = Field(default=None, exclude=True)
 
     def simulate(self, code: IATA, pct: GrowthPct) -> SimulationResult:
         dossier = self.dossiers.get(code)
@@ -148,15 +150,30 @@ def _build_dossier(
     context: AirportContext,
     peers: PeerStats,
     airport_lookup: dict[str, object],
+    segment_file: object | None,
     snapshot_at: str,
 ) -> AirportDossier | None:
     from app.services.airport_service import AirportCatalog
+    from app.providers.bts_t100_segment_file import BtsT100SegmentFileProvider
+    from app.analytics.long_haul import summarize_long_haul, LongHaulSummary
 
     catalog: AirportCatalog = airport_lookup  # type: ignore[assignment]
     airport = catalog.get(code)  # type: ignore[arg-type]
     if airport is None:
-        logger.warning("No airport record for %s, skipping dossier", code)
-        return None
+        try:
+            iata = normalize_iata(code)
+        except ValueError:
+            logger.warning("Invalid airport code %s, skipping dossier", code)
+            return None
+        airport = Airport(
+            iata_code=iata,
+            icao_code="",
+            name=iata,
+            city="",
+            state="",
+            latitude=0.0,
+            longitude=0.0,
+        )
 
     growth = calculate_passenger_growth(
         metrics.passenger_volume,
@@ -164,33 +181,44 @@ def _build_dossier(
     )
 
     lh_pct: DatumFloat
-    if isinstance(metrics.long_haul_flights, Present) and isinstance(
-        metrics.total_departures, Present
-    ):
-        if metrics.total_departures.value > 0:
-            pct = (metrics.long_haul_flights.value / metrics.total_departures.value) * 100.0
-            origin = fold_origins(
-                metrics.long_haul_flights.origin,
-                metrics.total_departures.origin,
-                method="long_haul_pct",
-            )
-            lh_pct = Present[float](value=pct, origin=origin)
+    lh_summary: LongHaulSummary | None = None
+    
+    if segment_file is not None:
+        seg_provider: BtsT100SegmentFileProvider = segment_file  # type: ignore[assignment]
+        if seg_provider.is_loaded:
+            rows = seg_provider.rows_for(code)
+            if rows:
+                lh_summary = summarize_long_haul(rows)
+                if lh_summary is not None:
+                    origin = Live(
+                        source="BTS T-100 Segment (bulk file)",
+                        period=seg_provider.period_label or "unknown",
+                        fetched_at=seg_provider.retrieved_at or snapshot_at,
+                    )
+                    lh_pct = Present[float](value=lh_summary.pct, origin=origin)
+                else:
+                    lh_pct = Absent(
+                        reason="NO_DEPARTURES",
+                        detail="airport present in segment file but no valid departures found",
+                        attempted=("BTS T-100 Segment (bulk file)",),
+                    )
+            else:
+                lh_pct = Absent(
+                    reason="NOT_PUBLISHED",
+                    detail="airport not present in segment file",
+                    attempted=("BTS T-100 Segment (bulk file)",),
+                )
         else:
             lh_pct = Absent(
-                reason="OUT_OF_SCOPE",
-                detail="total departures is zero",
-                attempted=(),
+                reason="NOT_PUBLISHED",
+                detail="BTS T-100 Segment file not configured or failed to load",
+                attempted=("BTS T-100 Segment (bulk file)",),
             )
     else:
-        attempted: list[str] = []
-        if isinstance(metrics.long_haul_flights, Absent):
-            attempted.extend(metrics.long_haul_flights.attempted)
-        if isinstance(metrics.total_departures, Absent):
-            attempted.extend(metrics.total_departures.attempted)
         lh_pct = Absent(
             reason="NOT_PUBLISHED",
-            detail="long-haul or departure data absent",
-            attempted=tuple(dict.fromkeys(attempted)),
+            detail="BTS T-100 Segment file not configured",
+            attempted=("BTS T-100 Segment (bulk file)",),
         )
 
     delay = calculate_delay_pressure(
@@ -207,6 +235,7 @@ def _build_dossier(
         metrics=enriched_metrics,
         passenger_growth=growth,
         long_haul_pct=lh_pct,
+        long_haul_summary=lh_summary,
         unmet_demand_index=unmet,
         context=context,
         snapshot_at=snapshot_at,
@@ -219,42 +248,96 @@ class AnalysisService:
         composite: CompositeProvider,
         context_composite: ContextComposite,
         catalog: object,
-        bts_provider: Any | None = None,
+        segment_file: object | None = None,
+        ontime_service: BtsOnTimeService | None = None,
     ) -> None:
         self._composite = composite
         self._context_composite = context_composite
         self._catalog = catalog
-        self._bts_provider = bts_provider
+        self._segment_file = segment_file
+        self._ontime_service = ontime_service
         self._lock = asyncio.Lock()
         self._cached: Universe | None = None
         self._cached_at: float = 0.0
 
-    async def universe(self) -> Universe:
+    async def universe(self, codes: Sequence[str] | None = None, regions: Sequence[str] | None = None) -> Universe:
+        requested: list[str] = []
+        if codes:
+            for raw in codes:
+                try:
+                    requested.append(normalize_iata(raw))
+                except ValueError:
+                    logger.warning("Skipping invalid IATA in universe request: %s", raw)
+
+        region_failures: list[ProviderFailure] = []
+        if regions:
+            from app.services.airport_service import AirportCatalog
+            catalog: AirportCatalog = self._catalog  # type: ignore[assignment]
+            for region in regions:
+                region_codes, failures = await catalog.region_codes(region)
+                requested.extend(region_codes)
+                region_failures.extend(failures)
+        
+        # Deduplicate requested codes
+        requested = list(dict.fromkeys(requested))
+
         now = time.monotonic()
-        if (
+        ttl_ok = (
             self._cached is not None
             and (now - self._cached_at) < settings.UNIVERSE_TTL_SECONDS
-        ):
-            return self._cached
+        )
+
+        if not requested:
+            if ttl_ok and self._cached is not None:
+                if region_failures:
+                    return self._cached.model_copy(update={"failures": self._cached.failures + region_failures})
+                return self._cached
+            
+            empty = self._empty_universe()
+            if region_failures:
+                empty = empty.model_copy(update={"failures": region_failures})
+            return empty
 
         async with self._lock:
             now = time.monotonic()
-            if (
+            ttl_ok = (
                 self._cached is not None
                 and (now - self._cached_at) < settings.UNIVERSE_TTL_SECONDS
-            ):
+            )
+            existing = set(self._cached.dossiers.keys()) if self._cached else set()
+            merged = list(dict.fromkeys([*existing, *requested]))
+
+            if ttl_ok and self._cached is not None and set(merged) == existing:
+                if region_failures:
+                    return self._cached.model_copy(update={"failures": self._cached.failures + region_failures})
                 return self._cached
 
-            universe = await self._build()
-            self._cached = universe
-            self._cached_at = time.monotonic()
+            universe = await self._build(merged)
+            if region_failures:
+                universe = universe.model_copy(update={"failures": universe.failures + region_failures})
+
+            if universe.dossiers:
+                self._cached = universe
+                self._cached_at = time.monotonic()
             return universe
 
-    async def _build(self) -> Universe:
+    @staticmethod
+    def _empty_universe() -> Universe:
+        return Universe(
+            snapshot_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            dossiers={},
+            scores={},
+            peers=PeerStats(bounds={}, universe_codes=()),
+            failures=[],
+            catalog=None,
+        )
+
+    async def _build(self, codes: Sequence[str]) -> Universe:
         from app.services.airport_service import AirportCatalog
 
         catalog: AirportCatalog = self._catalog  # type: ignore[assignment]
-        codes: Sequence[IATA] = catalog.codes  # type: ignore[assignment]
+
+        catalog_failures = await catalog.refresh(codes)  # type: ignore[arg-type]
 
         outcomes = await self._composite.fetch(codes)  # type: ignore[arg-type]
         metrics_map = merge_outcomes(codes, outcomes)
@@ -262,7 +345,7 @@ class AnalysisService:
         context_outcomes = await self._context_composite.fetch(codes)  # type: ignore[arg-type]
         context_map = merge_context_outcomes(codes, context_outcomes)
 
-        all_failures: list[ProviderFailure] = []
+        all_failures: list[ProviderFailure] = list(catalog_failures)
         for o in outcomes:
             all_failures.extend(o.failures)
         for o in context_outcomes:
@@ -297,7 +380,7 @@ class AnalysisService:
             else:
                 ctx = ctx.model_copy(update={"long_haul_departures": "unavailable"})
                 
-            d = _build_dossier(code, metrics, ctx, peers, self._catalog, snapshot_at)  # type: ignore[arg-type]
+            d = _build_dossier(code, metrics, ctx, peers, self._catalog, self._segment_file, snapshot_at)  # type: ignore[arg-type]
             if d is not None:
                 dossiers[code] = d
 
@@ -311,49 +394,6 @@ class AnalysisService:
             scores=scores,
             peers=peers,
             failures=all_failures,
-            long_haul_reports={},
-        )
-
-    def long_haul_report(
-        self,
-        code: str,
-        threshold_miles: float = 3000.0,
-        start_year: int | None = None,
-        end_year: int | None = None,
-        passenger_only: bool = False,
-    ) -> dict[str, Any]:
-        """Generate a full long-haul report directly from the BTS T-100 provider."""
-        if not self._bts_provider:
-            return {
-                "airport": code,
-                "metric": "long_haul_departure_percentage",
-                "threshold_miles": threshold_miles,
-                "start_year": start_year,
-                "end_year": end_year,
-                "total_departures": 0.0,
-                "long_haul_departures": 0.0,
-                "percentage": None,
-                "passenger_only": passenger_only,
-                "passenger_only_filter_available": False,
-                "unique_destinations": 0,
-                "long_haul_destinations": 0,
-                "average_distance_miles": 0.0,
-                "max_distance_miles": 0.0,
-                "top_long_haul_routes": [],
-                "source": "BTS T-100 Segment",
-                "calculation": "long_haul_departures / total_departures * 100",
-                "metadata": {
-                    "source": "BTS T-100 Segment",
-                    "latest_year": None,
-                    "latest_month": None,
-                    "retrieved_at": None,
-                }
-            }
-            
-        return self._bts_provider.get_report(
-            airport=code,
-            threshold_miles=threshold_miles,
-            start_year=start_year,
-            end_year=end_year,
-            passenger_only=passenger_only,
+            ontime_service=self._ontime_service,
+            catalog=catalog,
         )

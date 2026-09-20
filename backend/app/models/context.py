@@ -18,14 +18,27 @@ class WeatherContext(BaseModel, frozen=True):
     remarks: str
     observation_time: str
 
-class ConnectivityContext(BaseModel, frozen=True):
-    distinct_destinations: int
-    international_destinations: int
-    long_haul_route_count: int | None = None
+class FacilityContext(BaseModel, frozen=True):
+    acreage: int | None
+    part139_class: str | None
+    tower_type: str | None
+    status: str | None
+    effective_date: str
+    source: str = "NTAD Aviation Facilities"
+
+class NationalTrafficContext(BaseModel, frozen=True):
+    period: str
+    passengers_12m: int
+    passengers_prev_12m: int
+    growth_pct: float
+    departures_12m: int
+    load_factor_pct: float
+    source: str = "BTS AFF T-100 Summary"
 
 class AirportContext(BaseModel, frozen=True):
     nas_delay_program: DelayProgram | None = None
     weather: WeatherContext | None = None
-    connectivity: ConnectivityContext | None = None
+    facility: FacilityContext | None = None
+    national_traffic: NationalTrafficContext | None = None
     long_haul_departures: Literal["live", "unavailable"] | None = None
     warnings: list[str] = []

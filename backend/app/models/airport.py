@@ -1,14 +1,21 @@
 from __future__ import annotations
 
-from typing import Literal
+import re
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-IATA = Literal["BOS", "BDL", "PVD", "PWM", "LAX", "SNA", "ANC", "SFO", "JFK"]
+IATA = Annotated[str, Field(min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")]
 
-SUPPORTED: frozenset[str] = frozenset(
-    {"BOS", "BDL", "PVD", "PWM", "LAX", "SNA", "ANC", "SFO", "JFK"}
-)
+_IATA_RE = re.compile(r"^[A-Z]{3}$")
+
+
+def normalize_iata(code: str) -> str:
+    upper = code.strip().upper()
+    if not _IATA_RE.match(upper):
+        raise ValueError(f"{code!r} is not a valid IATA code (expected 3 letters)")
+    return upper
+
 
 Region = Literal["new_england", "west_coast", "alaska", "northeast", "california"]
 

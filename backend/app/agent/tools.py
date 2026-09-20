@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Literal
+from datetime import datetime
 
 from pydantic import BaseModel, ValidationError
 
@@ -28,6 +29,10 @@ from app.models.chat import (
     ToolResult,
     UnmetDemandResult,
     UnmetExplainResult,
+    DelayMetricsResult,
+    DelayComparisonResult,
+    DelayCausesResult,
+    DelayTrendResult,
 )
 from app.analytics.drivers import (
     capacity_pressure_drivers,
@@ -36,7 +41,6 @@ from app.analytics.drivers import (
     unmet_demand_drivers,
 )
 from app.models.metrics import Absent, DatumFloat, Present
-from app.analytics.long_haul import LONG_HAUL_THRESHOLD_STATUTE_MILES
 from app.scoring.expansion_score import rank
 from app.services.analysis_service import GrowthPct, Universe
 
@@ -82,6 +86,21 @@ class MetricRankArgs(BaseModel, frozen=True):
 class SimArgs(BaseModel, frozen=True):
     code: IATA
     growth_pct: float
+
+class DateRangeArgs(BaseModel, frozen=True):
+    code: IATA
+    start_date: str | None = None
+    end_date: str | None = None
+
+class DirectionArgs(BaseModel, frozen=True):
+    code: IATA
+    direction: Literal["departures", "arrivals", "both"] = "both"
+
+class DelayCompareArgs(BaseModel, frozen=True):
+    airport_a: IATA
+    airport_b: IATA
+    start_date: str | None = None
+    end_date: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -294,17 +313,23 @@ def rank_region(a: RegionArgs, u: Universe) -> ToolResult:
             f"Unknown region: {a.region}",
         )
 
+    region_codes_set: set[str] = set()
+    if u.catalog is not None:
+        region_codes_set = set(u.catalog.get_cached_region_codes(a.region))
+
     region_scores = []
     for code, dossier in u.dossiers.items():
-        if dossier.airport.state in states:
-            s = u.scores.get(code)
-            if s is not None:
-                region_scores.append(s)
+        in_region = dossier.airport.state in states or code in region_codes_set
+        if not in_region:
+            continue
+        s = u.scores.get(code)
+        if s is not None:
+            region_scores.append(s)
 
     if not region_scores:
         return _rejection(
             "rank_region", u.snapshot_at, [],
-            f"No airports found in region {a.region}",
+            f"No airports in {a.region} have complete BTS T-100 data",
         )
 
     ranked = rank(region_scores)
@@ -315,26 +340,6 @@ def rank_region(a: RegionArgs, u: Universe) -> ToolResult:
         ranked=ranked,
         region=a.region,
         peer_note=f"{len(ranked)} airports in {a.region}",
-    )
-
-
-def _long_haul_basis(metrics: object) -> str | None:
-    from app.models.metrics import AirportMetrics
-
-    if not isinstance(metrics, AirportMetrics):
-        return None
-    lh = metrics.long_haul_flights
-    total = metrics.total_departures
-    if not isinstance(lh, Present) or not isinstance(total, Present):
-        return None
-    period = ""
-    if hasattr(lh.origin, "period"):
-        period = lh.origin.period
-    pct = (lh.value / total.value * 100.0) if total.value > 0 else 0.0
-    period_note = f", {period}" if period else ""
-    return (
-        f"{lh.value} of {total.value} departures with a known destination "
-        f"({pct:.1f}% long-haul{period_note})"
     )
 
 
@@ -351,32 +356,54 @@ def get_long_haul_percentage(a: CodeArgs, u: Universe) -> ToolResult:
             f"Airport {a.code} not in universe",
         )
     
-    report = u.long_haul_reports.get(a.code, {})
-    basis = _long_haul_basis(dossier.metrics)
-    if isinstance(dossier.long_haul_pct, Absent):
-        basis = None
+    kwargs = {
+        "airports": [a.code],
+        "snapshot_at": u.snapshot_at,
+        "long_haul_pct": dossier.long_haul_pct,
+    }
+    
+    if dossier.long_haul_summary:
+        s = dossier.long_haul_summary
+        kwargs.update({
+            "total_departures": s.total_departures,
+            "long_haul_departures": s.long_haul_departures,
+            "unique_destinations": s.unique_destinations,
+            "long_haul_destinations": s.long_haul_destinations,
+            "average_distance_miles": s.average_distance_miles,
+            "max_distance_miles": s.max_distance_miles,
+            "top_long_haul_routes": s.top_long_haul_routes,
+            "start_year": s.start_year,
+            "end_year": s.end_year,
+            "calculation": "long_haul_departures / total_departures * 100",
+            "source": "BTS T-100 Segment (bulk file)",
+            "metadata": {},
+        })
+        if isinstance(dossier.long_haul_pct, Present):
+            kwargs["metadata"]["segment_file_period"] = getattr(dossier.long_haul_pct.origin, "period", None)
+
+    # Attach live proxies
+    intl = dossier.metrics.international_departures
+    total = dossier.metrics.total_departures
+    avg_dist = dossier.metrics.average_flight_distance_sm
+    
+    basis_parts = []
+    if dossier.long_haul_summary and isinstance(dossier.long_haul_pct, Present):
+        basis_parts.append(f"Long-haul from bulk file ({getattr(dossier.long_haul_pct.origin, 'period', 'unknown')})")
+    
+    if isinstance(intl, Present) and isinstance(total, Present) and total.value > 0:
+        kwargs["international_departures"] = float(intl.value)
+        kwargs["international_departure_share_pct"] = (intl.value / total.value) * 100.0
+        live_period = getattr(intl.origin, "period", "unknown")
+        kwargs["live_period"] = live_period
+        basis_parts.append(f"Live proxies ({live_period})")
         
-    return LongHaulResult(
-        airports=[a.code],
-        snapshot_at=u.snapshot_at,
-        long_haul_pct=dossier.long_haul_pct,
-        basis=basis,
-        threshold_statute_miles=report.get("threshold_miles", LONG_HAUL_THRESHOLD_STATUTE_MILES),
-        start_year=report.get("start_year"),
-        end_year=report.get("end_year"),
-        total_departures=report.get("total_departures"),
-        long_haul_departures=report.get("long_haul_departures"),
-        passenger_only=report.get("passenger_only", False),
-        passenger_only_filter_available=report.get("passenger_only_filter_available", True),
-        unique_destinations=report.get("unique_destinations"),
-        long_haul_destinations=report.get("long_haul_destinations"),
-        average_distance_miles=report.get("average_distance_miles"),
-        max_distance_miles=report.get("max_distance_miles"),
-        top_long_haul_routes=report.get("top_long_haul_routes", []),
-        source=report.get("source", "BTS T-100 Segment"),
-        calculation=report.get("calculation"),
-        metadata=report.get("metadata", {}),
-    )
+    if isinstance(avg_dist, Present):
+        kwargs["live_average_distance_miles"] = float(avg_dist.value)
+        
+    if basis_parts:
+        kwargs["basis"] = "; ".join(basis_parts)
+        
+    return LongHaulResult(**kwargs)
 
 
 @tool(
@@ -629,3 +656,77 @@ def rank_by_metric(a: MetricRankArgs, u: Universe) -> ToolResult:
         ),
         metric=metric,
     )
+
+def _parse_date(d_str: str | None) -> date | None:
+    if not d_str:
+        return None
+    try:
+        if "-" in d_str:
+            return datetime.strptime(d_str.split(" ")[0], "%Y-%m-%d").date()
+        else:
+            return datetime.strptime(d_str.split(" ")[0], "%m/%d/%Y").date()
+    except ValueError:
+        return None
+
+@tool(
+    "get_bts_delay_metrics",
+    args=DirectionArgs,
+    description="Retrieve historical delay metrics (departure/arrival) for an airport from BTS On-Time data",
+)
+def get_bts_delay_metrics(a: DirectionArgs, u: Universe) -> ToolResult:
+    if not u.ontime_service or not u.ontime_service.is_loaded:
+        return _rejection("get_bts_delay_metrics", u.snapshot_at, [a.code], "BTS On-Time service not loaded")
+        
+    metrics = u.ontime_service.get_airport_delay_metrics(a.code, direction=a.direction)
+    if not metrics:
+        return _rejection("get_bts_delay_metrics", u.snapshot_at, [a.code], "No delay metrics found")
+        
+    return DelayMetricsResult(airports=[a.code], snapshot_at=u.snapshot_at, metrics=metrics)
+
+@tool(
+    "compare_bts_airport_delays",
+    args=DelayCompareArgs,
+    description="Compare historical delay metrics between two airports using BTS On-Time data",
+)
+def compare_bts_airport_delays(a: DelayCompareArgs, u: Universe) -> ToolResult:
+    if not u.ontime_service or not u.ontime_service.is_loaded:
+        return _rejection("compare_bts_airport_delays", u.snapshot_at, [a.airport_a, a.airport_b], "BTS On-Time service not loaded")
+        
+    start_d = _parse_date(a.start_date)
+    end_d = _parse_date(a.end_date)
+    
+    comp = u.ontime_service.compare_airport_delays(a.airport_a, a.airport_b, start_date=start_d, end_date=end_d)
+    if not comp:
+        return _rejection("compare_bts_airport_delays", u.snapshot_at, [a.airport_a, a.airport_b], "No delay metrics found for comparison")
+        
+    return DelayComparisonResult(airports=[a.airport_a, a.airport_b], snapshot_at=u.snapshot_at, comparison=comp)
+
+@tool(
+    "get_bts_delay_causes",
+    args=DirectionArgs,
+    description="Retrieve breakdown of delay causes (Carrier, Weather, NAS, Security, LateAircraft) for an airport",
+)
+def get_bts_delay_causes(a: DirectionArgs, u: Universe) -> ToolResult:
+    if not u.ontime_service or not u.ontime_service.is_loaded:
+        return _rejection("get_bts_delay_causes", u.snapshot_at, [a.code], "BTS On-Time service not loaded")
+        
+    causes = u.ontime_service.get_delay_causes(a.code, direction=a.direction if a.direction in ("departures", "arrivals") else "departures")
+    if not causes:
+        return _rejection("get_bts_delay_causes", u.snapshot_at, [a.code], "No delay causes found")
+        
+    return DelayCausesResult(airports=[a.code], snapshot_at=u.snapshot_at, causes=causes)
+
+@tool(
+    "get_bts_delay_trend",
+    args=DirectionArgs,
+    description="Retrieve monthly trend of delay percentages and minutes for an airport",
+)
+def get_bts_delay_trend(a: DirectionArgs, u: Universe) -> ToolResult:
+    if not u.ontime_service or not u.ontime_service.is_loaded:
+        return _rejection("get_bts_delay_trend", u.snapshot_at, [a.code], "BTS On-Time service not loaded")
+        
+    trend = u.ontime_service.get_delay_trend(a.code, direction=a.direction if a.direction in ("departures", "arrivals") else "departures")
+    if not trend:
+        return _rejection("get_bts_delay_trend", u.snapshot_at, [a.code], "No delay trend found")
+        
+    return DelayTrendResult(airports=[a.code], snapshot_at=u.snapshot_at, airport=a.code, direction=a.direction, trend=trend)

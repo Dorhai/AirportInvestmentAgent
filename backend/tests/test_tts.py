@@ -36,11 +36,12 @@ def test_tts_synthesize_success(monkeypatch):
     mock_post.return_value.content = b"fake_audio_content"
 
     class MockAsyncClient:
-        post = mock_post
-        
+        def __init__(self, *args, **kwargs):
+            self.post = mock_post
+
         async def __aenter__(self):
             return self
-            
+
         async def __aexit__(self, exc_type, exc_val, exc_tb):
             pass
 

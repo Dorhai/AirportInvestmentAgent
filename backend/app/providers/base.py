@@ -26,6 +26,8 @@ MetricField = Literal[
     "average_delay_minutes",
     "long_haul_flights",
     "total_departures",
+    "international_departures",
+    "average_flight_distance_sm",
 ]
 
 
@@ -38,6 +40,7 @@ class ProviderOutcome(BaseModel, frozen=True):
 class ContextOutcome(BaseModel, frozen=True):
     fields: dict[str, dict[str, Any]]  # airport_code -> field_name -> Any
     failures: list[ProviderFailure]
+    warnings: dict[str, list[str]] = {}
 
 
 @runtime_checkable

@@ -4,11 +4,34 @@ import pytest
 
 from app.agent.conversation_frame import ConversationFrame
 from app.agent.follow_up import plan_fallback_tools
-from app.agent.guardrails import build_follow_up_hints, resolve_mentions
+from app.agent.guardrails import (
+    build_follow_up_hints,
+    message_has_analytical_intent,
+    resolve_mentions,
+)
 from app.agent.llm import ToolCall
 from app.agent.session import Session
 from app.models.chat import ComparisonResult, UnmetDemandResult
 from app.models.metrics import Live, Present
+
+
+def test_message_has_analytical_intent() -> None:
+    assert message_has_analytical_intent("what causes congestion at each?")
+    assert message_has_analytical_intent("Which airports in New England are strong candidates?")
+    assert not message_has_analytical_intent("johnny corner hello hello")
+    assert not message_has_analytical_intent("how to build a snowman")
+    assert not message_has_analytical_intent("thanks")
+
+
+def test_plan_fallback_gibberish_does_not_default_compare() -> None:
+    frame = ConversationFrame(
+        airports=["BOS", "PVD", "PWM", "BDL"],
+        region="new_england",
+        ranked_airports=["BOS", "PVD", "PWM", "BDL"],
+    )
+    session = Session(conversation_id="test")
+    calls = plan_fallback_tools("johnny corner hello hello", session, frame)
+    assert calls == []
 
 
 def test_build_follow_up_hints() -> None:

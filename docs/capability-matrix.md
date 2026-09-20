@@ -8,7 +8,7 @@ Benchmark questions map to deterministic tools or explicit declines.
 |----------|---------|--------|
 | Strong terminal expansion candidates | `rank_region(new_england)` | Opportunity score ranking |
 | Factors for good candidates | `rank_region` or carried scores | Explain score components |
-| Highest passenger growth | `rank_by_metric(passenger_growth)` | YoY from FAA ACAIS |
+| Highest passenger growth | `rank_by_metric(passenger_growth)` | YoY from BTS T-100 origin (trailing window) |
 | Close to terminal capacity | `rank_by_metric(capacity_pressure_score)` | Pax/ops proxy, not gates |
 | Infrastructure constraints | `explain_capacity_pressure` | Proxy drivers only |
 | Most benefit from gates | `rank_by_metric(capacity_pressure_score)` | Highest pressure in region |

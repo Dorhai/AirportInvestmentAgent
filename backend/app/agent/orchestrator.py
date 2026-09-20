@@ -8,12 +8,11 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 from collections.abc import AsyncIterator
 import json
-import time
-from pathlib import Path
 
 from app.agent.guardrails import (
     Confirm,
     Proceed,
+    message_has_analytical_intent,
     screen_input,
     screen_output,
 )
@@ -112,9 +111,6 @@ class Orchestrator:
 
         assert isinstance(gate, Proceed)
 
-        # Start universe task early so it runs in parallel with LLM tool selection
-        universe_task = asyncio.create_task(self._analysis.universe())
-
         # 2. Build Conversation Frame and Scope
         frame = frame_from_session(session)
         scope = resolve_airport_scope(req.message, session, frame)
@@ -130,6 +126,12 @@ class Orchestrator:
         mention_codes = (
             list(mentions.codes) if isinstance(mentions, Resolved) else []
         )
+
+        load_codes = list(
+            dict.fromkeys([*scope.codes, *mention_codes, *frame.airports])
+        )
+        load_regions = [scope.region] if scope.region else []
+        universe_task = asyncio.create_task(self._analysis.universe(load_codes, regions=load_regions))
         carried_evidence = session.accumulated_evidence()
         
         follow_up_hints = build_follow_up_hints(req.message, frame, mentions, carried_evidence)
@@ -137,6 +139,17 @@ class Orchestrator:
         from app.agent.capability import capability_hints
 
         hints.extend(capability_hints(req.message))
+
+        lacks_analytical_intent = bool(frame.airports) and not message_has_analytical_intent(
+            req.message
+        )
+        if lacks_analytical_intent:
+            hints.append(
+                "The user's latest message does not look like an airport analytics question. "
+                "Reply in one or two short sentences: say you did not understand, and ask "
+                "what they want to explore next about the airports already in scope. "
+                "Do not present new analysis, scores, or repeat the prior ranking."
+            )
 
         if scope.source == "referent":
             hints.append(f"Resolved referents: {', '.join(scope.codes)}")
@@ -168,7 +181,9 @@ class Orchestrator:
         from app.agent.tool_reconcile import reconcile_tool_calls
 
         calls = coalesce_tools(calls, frame, mentions)
-        calls = reconcile_tool_calls(req.message, calls)
+        
+        has_ontime = self._analysis._ontime_service is not None and self._analysis._ontime_service.is_loaded
+        calls = reconcile_tool_calls(req.message, calls, has_ontime=has_ontime)
 
         from app.agent.display_evidence import message_wants_airport_comparison
         from app.agent.evidence_display import should_refresh_region_ranking
@@ -185,6 +200,9 @@ class Orchestrator:
                 *calls,
             ]
 
+        if lacks_analytical_intent:
+            calls = []
+
         # 6. Execute tools concurrently
         new_evidence: list[ToolResult] = []
         evidence_origin: Literal["this_turn", "carried", "none"] = (
@@ -193,21 +211,23 @@ class Orchestrator:
         if not calls:
             calls = plan_fallback_tools(req.message, session, frame, carried_evidence)
 
+        # Check if any call carries a region argument not yet requested
+        extra_regions = []
+        for call in calls:
+            if "region" in call.arguments and call.arguments["region"]:
+                call_region = call.arguments["region"]
+                if call_region not in load_regions:
+                    extra_regions.append(call_region)
+        
+        if extra_regions:
+            load_regions.extend(extra_regions)
+            load_regions = list(dict.fromkeys(load_regions))
+            universe_task = asyncio.create_task(self._analysis.universe(load_codes, regions=load_regions))
+
         if calls:
             yield SseEvent(event="phase", data={"step": "tools"})
             universe = await universe_task
             
-            # Prefetch long_haul_reports for requested codes
-            long_haul_reports = dict(universe.long_haul_reports)
-            for call in calls:
-                if call.name == "get_long_haul_percentage":
-                    code = call.arguments.get("code")
-                    if code and isinstance(code, str) and code not in long_haul_reports:
-                        long_haul_reports[code] = self._analysis.long_haul_report(code)
-            
-            if long_haul_reports != universe.long_haul_reports:
-                universe = universe.model_copy(update={"long_haul_reports": long_haul_reports})
-                
             results = await asyncio.gather(
                 *(
                     asyncio.to_thread(execute, call, universe)

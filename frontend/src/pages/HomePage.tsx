@@ -19,6 +19,6 @@ export function HomePage() {
     setConversationId(getTabConversationId());
   }, []);
 
-  const { turns, send, isPending, streamingPhase } = useChat(conversationId);
-  return <ChatContainer turns={turns} onSend={send} isPending={isPending} streamingPhase={streamingPhase} />;
+  const { turns, send, isPending } = useChat(conversationId);
+  return <ChatContainer turns={turns} onSend={send} isPending={isPending} />;
 }

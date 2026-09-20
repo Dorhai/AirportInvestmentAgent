@@ -10,6 +10,8 @@ const LABELS: Record<string, string> = {
   unmet_demand_index: "unmet demand index",
 };
 
+export const RANKING_DISPLAY_LIMIT = 4;
+
 export function rankingMetricLabel(metric: string): string {
   return LABELS[metric] ?? metric.replace(/_/g, " ");
 }

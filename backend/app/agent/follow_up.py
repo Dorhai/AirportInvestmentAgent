@@ -4,6 +4,7 @@ import re
 
 from app.agent.airport_scope import AirportScope, resolve_airport_scope
 from app.agent.conversation_frame import ConversationFrame
+from app.agent.guardrails import message_has_analytical_intent
 from app.agent.intent_routing import plan_initial_tools, resolve_region
 from app.agent.llm import ToolCall
 from app.agent.session import Session
@@ -209,7 +210,7 @@ def plan_fallback_tools(
         return _compare_calls(list(scope.codes), carried)
 
     scoped = list(scope.codes)
-    if len(scoped) >= 2:
+    if len(scoped) >= 2 and message_has_analytical_intent(message):
         return _compare_calls(scoped, carried)
 
     return []

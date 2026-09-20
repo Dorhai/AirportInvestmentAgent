@@ -77,7 +77,7 @@ def resolve_airport_scope(
     if ref_codes is not None:
         return AirportScope(
             codes=tuple(ref_codes),
-            region=frame.region,
+            region=resolve_region(message) or frame.region,
             source="referent",
         )
 
@@ -100,13 +100,13 @@ def resolve_airport_scope(
             
         return AirportScope(
             codes=tuple(codes),
-            region=frame.region,
+            region=resolve_region(message) or frame.region,
             source=source,
         )
 
     # 5. Fallback to frame union (if no last turn)
     return AirportScope(
         codes=tuple(frame.airports),
-        region=frame.region,
+        region=resolve_region(message) or frame.region,
         source="last_turn",
     )

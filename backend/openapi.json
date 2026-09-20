@@ -101,6 +101,57 @@
         }
       }
     },
+    "/api/airports/{code}/long-haul": {
+      "get": {
+        "summary": "Get Airport Long Haul",
+        "operationId": "get_airport_long_haul_api_airports__code__long_haul_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          },
+          {
+            "name": "threshold_miles",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "default": 3000.0,
+              "title": "Threshold Miles"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Airport Long Haul Api Airports  Code  Long Haul Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/airports/compare": {
       "post": {
         "summary": "Compare Airports",
@@ -225,6 +276,43 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/schema": {
+      "get": {
+        "summary": "Chat Schema",
+        "description": "Dummy endpoint to force ChatResponse into the OpenAPI schema.",
+        "operationId": "chat_schema_api_chat_schema_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/schema/confirmation": {
+      "get": {
+        "summary": "Confirmation Schema",
+        "operationId": "confirmation_schema_api_chat_schema_confirmation_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Confirmation"
                 }
               }
             }
@@ -365,10 +453,20 @@
               }
             ]
           },
-          "connectivity": {
+          "facility": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ConnectivityContext"
+                "$ref": "#/components/schemas/FacilityContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "national_traffic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NationalTrafficContext"
               },
               {
                 "type": "null"
@@ -402,21 +500,119 @@
         "type": "object",
         "title": "AirportContext"
       },
+      "AirportDelayMetrics": {
+        "properties": {
+          "airport": {
+            "type": "string",
+            "title": "Airport"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "total_flights": {
+            "type": "integer",
+            "title": "Total Flights"
+          },
+          "departure_delay_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Delay Pct"
+          },
+          "arrival_delay_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Delay Pct"
+          },
+          "average_departure_delay_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Departure Delay Minutes"
+          },
+          "average_arrival_delay_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Arrival Delay Minutes"
+          },
+          "cancellation_pct": {
+            "type": "number",
+            "title": "Cancellation Pct"
+          },
+          "diversion_pct": {
+            "type": "number",
+            "title": "Diversion Pct"
+          },
+          "primary_delay_cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Delay Cause"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "BTS Reporting Carrier On-Time Performance"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport",
+          "period",
+          "total_flights",
+          "departure_delay_pct",
+          "arrival_delay_pct",
+          "average_departure_delay_minutes",
+          "average_arrival_delay_minutes",
+          "cancellation_pct",
+          "diversion_pct",
+          "primary_delay_cause"
+        ],
+        "title": "AirportDelayMetrics"
+      },
       "AirportMetrics": {
         "properties": {
           "airport_code": {
             "type": "string",
-            "enum": [
-              "BOS",
-              "BDL",
-              "PVD",
-              "PWM",
-              "LAX",
-              "SNA",
-              "ANC",
-              "SFO",
-              "JFK"
-            ],
+            "maxLength": 3,
+            "minLength": 3,
+            "pattern": "^[A-Z]{3}$",
             "title": "Airport Code"
           },
           "airport_name": {
@@ -500,6 +696,40 @@
               }
             ],
             "title": "Total Departures"
+          },
+          "international_departures": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_int_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "International Departures",
+            "default": {
+              "kind": "absent",
+              "reason": "NOT_PUBLISHED",
+              "detail": "default",
+              "attempted": []
+            }
+          },
+          "average_flight_distance_sm": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Average Flight Distance Sm",
+            "default": {
+              "kind": "absent",
+              "reason": "NOT_PUBLISHED",
+              "detail": "default",
+              "attempted": []
+            }
           },
           "warnings": {
             "items": {
@@ -587,17 +817,9 @@
         "properties": {
           "airport_code": {
             "type": "string",
-            "enum": [
-              "BOS",
-              "BDL",
-              "PVD",
-              "PWM",
-              "LAX",
-              "SNA",
-              "ANC",
-              "SFO",
-              "JFK"
-            ],
+            "maxLength": 3,
+            "minLength": 3,
+            "pattern": "^[A-Z]{3}$",
             "title": "Airport Code"
           },
           "airport_name": {
@@ -724,6 +946,41 @@
         ],
         "title": "AirportScore"
       },
+      "CapacityExplainResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "capacity_explain",
+            "title": "Kind",
+            "default": "capacity_explain"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ExplainCapacityRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "rows"
+        ],
+        "title": "CapacityExplainResult"
+      },
       "ChatRequest": {
         "properties": {
           "message": {
@@ -758,22 +1015,192 @@
         ],
         "title": "ChatRequest"
       },
+      "ChatResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "analysis_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Type"
+          },
+          "scores": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AirportScore"
+            },
+            "type": "object",
+            "title": "Scores",
+            "default": {}
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources",
+            "default": []
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions",
+            "default": []
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ],
+            "title": "Confidence",
+            "default": "LOW"
+          },
+          "data_freshness": {
+            "type": "string",
+            "enum": [
+              "live",
+              "mixed",
+              "sample"
+            ],
+            "title": "Data Freshness",
+            "default": "live"
+          },
+          "evidence": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/MetricsResult"
+                },
+                {
+                  "$ref": "#/components/schemas/ScoreResult"
+                },
+                {
+                  "$ref": "#/components/schemas/ComparisonResult"
+                },
+                {
+                  "$ref": "#/components/schemas/RankingResult"
+                },
+                {
+                  "$ref": "#/components/schemas/LongHaulResult"
+                },
+                {
+                  "$ref": "#/components/schemas/UnmetDemandResult"
+                },
+                {
+                  "$ref": "#/components/schemas/SimulationResult"
+                },
+                {
+                  "$ref": "#/components/schemas/CongestionExplainResult"
+                },
+                {
+                  "$ref": "#/components/schemas/UnmetExplainResult"
+                },
+                {
+                  "$ref": "#/components/schemas/CapacityExplainResult"
+                },
+                {
+                  "$ref": "#/components/schemas/DelayMetricsResult"
+                },
+                {
+                  "$ref": "#/components/schemas/app__models__chat__DelayComparisonResult"
+                },
+                {
+                  "$ref": "#/components/schemas/DelayCausesResult"
+                },
+                {
+                  "$ref": "#/components/schemas/DelayTrendResult"
+                },
+                {
+                  "$ref": "#/components/schemas/ToolRejection"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "kind",
+                "mapping": {
+                  "capacity_explain": "#/components/schemas/CapacityExplainResult",
+                  "comparison": "#/components/schemas/ComparisonResult",
+                  "congestion_explain": "#/components/schemas/CongestionExplainResult",
+                  "delay_causes": "#/components/schemas/DelayCausesResult",
+                  "delay_comparison": "#/components/schemas/app__models__chat__DelayComparisonResult",
+                  "delay_metrics": "#/components/schemas/DelayMetricsResult",
+                  "delay_trend": "#/components/schemas/DelayTrendResult",
+                  "long_haul": "#/components/schemas/LongHaulResult",
+                  "metrics": "#/components/schemas/MetricsResult",
+                  "ranking": "#/components/schemas/RankingResult",
+                  "rejection": "#/components/schemas/ToolRejection",
+                  "score": "#/components/schemas/ScoreResult",
+                  "simulation": "#/components/schemas/SimulationResult",
+                  "unmet_demand": "#/components/schemas/UnmetDemandResult",
+                  "unmet_explain": "#/components/schemas/UnmetExplainResult"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Evidence",
+            "default": []
+          },
+          "evidence_origin": {
+            "type": "string",
+            "enum": [
+              "this_turn",
+              "carried",
+              "none"
+            ],
+            "title": "Evidence Origin",
+            "default": "none"
+          },
+          "needs_confirmation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Confirmation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "airports"
+        ],
+        "title": "ChatResponse"
+      },
       "CompareRequest": {
         "properties": {
           "airport_codes": {
             "items": {
               "type": "string",
-              "enum": [
-                "BOS",
-                "BDL",
-                "PVD",
-                "PWM",
-                "LAX",
-                "SNA",
-                "ANC",
-                "SFO",
-                "JFK"
-              ]
+              "maxLength": 3,
+              "minLength": 3,
+              "pattern": "^[A-Z]{3}$"
             },
             "type": "array",
             "title": "Airport Codes"
@@ -860,17 +1287,9 @@
         "properties": {
           "airport_code": {
             "type": "string",
-            "enum": [
-              "BOS",
-              "BDL",
-              "PVD",
-              "PWM",
-              "LAX",
-              "SNA",
-              "ANC",
-              "SFO",
-              "JFK"
-            ],
+            "maxLength": 3,
+            "minLength": 3,
+            "pattern": "^[A-Z]{3}$",
             "title": "Airport Code"
           },
           "score": {
@@ -898,34 +1317,223 @@
         ],
         "title": "ComparisonRow"
       },
-      "ConnectivityContext": {
+      "ConfirmOption": {
         "properties": {
-          "distinct_destinations": {
-            "type": "integer",
-            "title": "Distinct Destinations"
+          "label": {
+            "type": "string",
+            "title": "Label"
           },
-          "international_destinations": {
-            "type": "integer",
-            "title": "International Destinations"
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "ConfirmOption"
+      },
+      "Confirmation": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
           },
-          "long_haul_route_count": {
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ConfirmOption"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt",
+          "options"
+        ],
+        "title": "Confirmation"
+      },
+      "CongestionExplainResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "congestion_explain",
+            "title": "Kind",
+            "default": "congestion_explain"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ExplainCongestionRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "rows"
+        ],
+        "title": "CongestionExplainResult"
+      },
+      "DelayCauseBreakdown": {
+        "properties": {
+          "airport": {
+            "type": "string",
+            "title": "Airport"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "departures",
+              "arrivals"
+            ],
+            "title": "Direction"
+          },
+          "total_flights": {
+            "type": "integer",
+            "title": "Total Flights"
+          },
+          "carrier_delay_pct": {
+            "type": "number",
+            "title": "Carrier Delay Pct"
+          },
+          "weather_delay_pct": {
+            "type": "number",
+            "title": "Weather Delay Pct"
+          },
+          "nas_delay_pct": {
+            "type": "number",
+            "title": "Nas Delay Pct"
+          },
+          "security_delay_pct": {
+            "type": "number",
+            "title": "Security Delay Pct"
+          },
+          "late_aircraft_delay_pct": {
+            "type": "number",
+            "title": "Late Aircraft Delay Pct"
+          },
+          "primary_delay_cause": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Long Haul Route Count"
+            "title": "Primary Delay Cause"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "BTS Reporting Carrier On-Time Performance"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions",
+            "default": []
           }
         },
         "type": "object",
         "required": [
-          "distinct_destinations",
-          "international_destinations"
+          "airport",
+          "period",
+          "direction",
+          "total_flights",
+          "carrier_delay_pct",
+          "weather_delay_pct",
+          "nas_delay_pct",
+          "security_delay_pct",
+          "late_aircraft_delay_pct",
+          "primary_delay_cause"
         ],
-        "title": "ConnectivityContext"
+        "title": "DelayCauseBreakdown"
+      },
+      "DelayCausesResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "delay_causes",
+            "title": "Kind",
+            "default": "delay_causes"
+          },
+          "causes": {
+            "$ref": "#/components/schemas/DelayCauseBreakdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "causes"
+        ],
+        "title": "DelayCausesResult"
+      },
+      "DelayMetricsResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "delay_metrics",
+            "title": "Kind",
+            "default": "delay_metrics"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AirportDelayMetrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "metrics"
+        ],
+        "title": "DelayMetricsResult"
       },
       "DelayProgram": {
         "properties": {
@@ -959,6 +1567,51 @@
           "updated_at"
         ],
         "title": "DelayProgram"
+      },
+      "DelayTrendResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "delay_trend",
+            "title": "Kind",
+            "default": "delay_trend"
+          },
+          "airport": {
+            "type": "string",
+            "title": "Airport"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction"
+          },
+          "trend": {
+            "items": {
+              "$ref": "#/components/schemas/MonthlyDelayPoint"
+            },
+            "type": "array",
+            "title": "Trend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "airport",
+          "direction",
+          "trend"
+        ],
+        "title": "DelayTrendResult"
       },
       "Derived": {
         "properties": {
@@ -1009,6 +1662,259 @@
           "freshness"
         ],
         "title": "Derived"
+      },
+      "DriverRow": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "base_weight": {
+            "type": "number",
+            "title": "Base Weight"
+          },
+          "effective_weight": {
+            "type": "number",
+            "title": "Effective Weight"
+          },
+          "normalized_contribution": {
+            "type": "number",
+            "title": "Normalized Contribution"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "base_weight",
+          "effective_weight",
+          "normalized_contribution"
+        ],
+        "title": "DriverRow"
+      },
+      "ExplainCapacityRow": {
+        "properties": {
+          "airport_code": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "title": "Airport Code"
+          },
+          "capacity_pressure_score": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Capacity Pressure Score"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/DriverRow"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "highest_driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Driver"
+          },
+          "pax_per_operation": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Present_float_"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Absent"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pax Per Operation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_code",
+          "capacity_pressure_score",
+          "drivers"
+        ],
+        "title": "ExplainCapacityRow"
+      },
+      "ExplainCongestionRow": {
+        "properties": {
+          "airport_code": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "title": "Airport Code"
+          },
+          "congestion_score": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Congestion Score"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/DriverRow"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "highest_driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Driver"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_code",
+          "congestion_score",
+          "drivers"
+        ],
+        "title": "ExplainCongestionRow"
+      },
+      "ExplainUnmetRow": {
+        "properties": {
+          "airport_code": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "title": "Airport Code"
+          },
+          "unmet_demand_index": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Unmet Demand Index"
+          },
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/DriverRow"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "highest_driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Driver"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_code",
+          "unmet_demand_index",
+          "drivers"
+        ],
+        "title": "ExplainUnmetRow"
+      },
+      "FacilityContext": {
+        "properties": {
+          "acreage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acreage"
+          },
+          "part139_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part139 Class"
+          },
+          "tower_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tower Type"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "effective_date": {
+            "type": "string",
+            "title": "Effective Date"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "NTAD Aviation Facilities"
+          }
+        },
+        "type": "object",
+        "required": [
+          "acreage",
+          "part139_class",
+          "tower_type",
+          "status",
+          "effective_date"
+        ],
+        "title": "FacilityContext"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1064,6 +1970,356 @@
           "fetched_at"
         ],
         "title": "Live"
+      },
+      "LongHaulResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "long_haul",
+            "title": "Kind",
+            "default": "long_haul"
+          },
+          "long_haul_pct": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Long Haul Pct"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "threshold_statute_miles": {
+            "type": "number",
+            "title": "Threshold Statute Miles",
+            "default": 3000.0
+          },
+          "start_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Year"
+          },
+          "end_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Year"
+          },
+          "total_departures": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Departures"
+          },
+          "long_haul_departures": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Long Haul Departures"
+          },
+          "passenger_only": {
+            "type": "boolean",
+            "title": "Passenger Only",
+            "default": false
+          },
+          "passenger_only_filter_available": {
+            "type": "boolean",
+            "title": "Passenger Only Filter Available",
+            "default": true
+          },
+          "unique_destinations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unique Destinations"
+          },
+          "long_haul_destinations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Long Haul Destinations"
+          },
+          "average_distance_miles": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Distance Miles"
+          },
+          "max_distance_miles": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Distance Miles"
+          },
+          "top_long_haul_routes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Top Long Haul Routes",
+            "default": []
+          },
+          "international_departures": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "International Departures"
+          },
+          "international_departure_share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "International Departure Share Pct"
+          },
+          "live_average_distance_miles": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Average Distance Miles"
+          },
+          "live_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Period"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "BTS T-100 Segment"
+          },
+          "calculation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculation"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "long_haul_pct"
+        ],
+        "title": "LongHaulResult"
+      },
+      "MetricsResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "metrics",
+            "title": "Kind",
+            "default": "metrics"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AirportMetrics"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AirportContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "metrics"
+        ],
+        "title": "MetricsResult"
+      },
+      "MonthlyDelayPoint": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "total_flights": {
+            "type": "integer",
+            "title": "Total Flights"
+          },
+          "delay_pct": {
+            "type": "number",
+            "title": "Delay Pct"
+          },
+          "average_delay_minutes": {
+            "type": "number",
+            "title": "Average Delay Minutes"
+          },
+          "cancellation_pct": {
+            "type": "number",
+            "title": "Cancellation Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "month",
+          "total_flights",
+          "delay_pct",
+          "average_delay_minutes",
+          "cancellation_pct"
+        ],
+        "title": "MonthlyDelayPoint"
+      },
+      "NationalTrafficContext": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "passengers_12m": {
+            "type": "integer",
+            "title": "Passengers 12M"
+          },
+          "passengers_prev_12m": {
+            "type": "integer",
+            "title": "Passengers Prev 12M"
+          },
+          "growth_pct": {
+            "type": "number",
+            "title": "Growth Pct"
+          },
+          "departures_12m": {
+            "type": "integer",
+            "title": "Departures 12M"
+          },
+          "load_factor_pct": {
+            "type": "number",
+            "title": "Load Factor Pct"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "BTS AFF T-100 Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "passengers_12m",
+          "passengers_prev_12m",
+          "growth_pct",
+          "departures_12m",
+          "load_factor_pct"
+        ],
+        "title": "NationalTrafficContext"
       },
       "Present_float_": {
         "properties": {
@@ -1324,6 +2580,47 @@
         ],
         "title": "Scenario"
       },
+      "ScoreResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "score",
+            "title": "Kind",
+            "default": "score"
+          },
+          "score": {
+            "$ref": "#/components/schemas/AirportScore"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AirportContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "score"
+        ],
+        "title": "ScoreResult"
+      },
       "ScoringMethodology": {
         "properties": {
           "weights": {
@@ -1356,6 +2653,95 @@
         ],
         "title": "ScoringMethodology"
       },
+      "SimulationResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation",
+            "title": "Kind",
+            "default": "simulation"
+          },
+          "baseline_score": {
+            "$ref": "#/components/schemas/AirportScore"
+          },
+          "simulated_score": {
+            "$ref": "#/components/schemas/AirportScore"
+          },
+          "growth_adjustment": {
+            "type": "number",
+            "title": "Growth Adjustment"
+          },
+          "delta_opportunity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Opportunity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "baseline_score",
+          "simulated_score",
+          "growth_adjustment",
+          "delta_opportunity"
+        ],
+        "title": "SimulationResult"
+      },
+      "ToolRejection": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "rejection",
+            "title": "Kind",
+            "default": "rejection"
+          },
+          "tool_name": {
+            "type": "string",
+            "title": "Tool Name"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "tool_name",
+          "reason"
+        ],
+        "title": "ToolRejection"
+      },
       "TtsRequest": {
         "properties": {
           "text": {
@@ -1368,6 +2754,80 @@
           "text"
         ],
         "title": "TtsRequest"
+      },
+      "UnmetDemandResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "unmet_demand",
+            "title": "Kind",
+            "default": "unmet_demand"
+          },
+          "unmet_demand_index": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Present_float_"
+              },
+              {
+                "$ref": "#/components/schemas/Absent"
+              }
+            ],
+            "title": "Unmet Demand Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "unmet_demand_index"
+        ],
+        "title": "UnmetDemandResult"
+      },
+      "UnmetExplainResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "unmet_explain",
+            "title": "Kind",
+            "default": "unmet_explain"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ExplainUnmetRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "rows"
+        ],
+        "title": "UnmetExplainResult"
       },
       "ValidationError": {
         "properties": {
@@ -1441,6 +2901,63 @@
           "observation_time"
         ],
         "title": "WeatherContext"
+      },
+      "app__analytics__bts_ontime__DelayComparisonResult": {
+        "properties": {
+          "airport_a": {
+            "$ref": "#/components/schemas/AirportDelayMetrics"
+          },
+          "airport_b": {
+            "$ref": "#/components/schemas/AirportDelayMetrics"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "BTS Reporting Carrier On-Time Performance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airport_a",
+          "airport_b",
+          "period"
+        ],
+        "title": "DelayComparisonResult"
+      },
+      "app__models__chat__DelayComparisonResult": {
+        "properties": {
+          "airports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Airports"
+          },
+          "snapshot_at": {
+            "type": "string",
+            "title": "Snapshot At"
+          },
+          "kind": {
+            "type": "string",
+            "const": "delay_comparison",
+            "title": "Kind",
+            "default": "delay_comparison"
+          },
+          "comparison": {
+            "$ref": "#/components/schemas/app__analytics__bts_ontime__DelayComparisonResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "airports",
+          "snapshot_at",
+          "comparison"
+        ],
+        "title": "DelayComparisonResult"
       }
     }
   }

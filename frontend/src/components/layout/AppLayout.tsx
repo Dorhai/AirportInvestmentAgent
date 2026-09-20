@@ -9,8 +9,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <span className="text-sm font-mono text-ink-muted hidden sm:inline-block">ATFM Morning Briefing</span>
         </div>
         <div className="text-xs font-mono text-ink-muted text-right">
-          <div>SYS STATUS: NOMINAL</div>
-          <div>{new Date().toISOString().split('T')[0]}</div>
+          {new Date().toISOString().split("T")[0]}
         </div>
       </header>
       <main className="flex-1 overflow-hidden">{children}</main>

@@ -9,7 +9,7 @@ Review the implementation against the intended architecture.
 
 Read:
 
-CODEBASE_MAP.md
+docs/CODEBASE_MAP.md
 
 and:
 
@@ -101,11 +101,11 @@ Use one canonical implementation.
 
 ## 7. Codebase Map
 
-Compare repository structure against CODEBASE_MAP.md.
+Compare repository structure against docs/CODEBASE_MAP.md.
 
 If the architecture legitimately changed:
 
-update CODEBASE_MAP.md.
+update docs/CODEBASE_MAP.md.
 
 Do not update the map for trivial internal edits.
 

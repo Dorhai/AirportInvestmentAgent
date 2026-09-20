@@ -1,4 +1,4 @@
-import { Volume2 } from "lucide-react";
+import { Pause, Play, RotateCcw, Square } from "lucide-react";
 import type { Block } from "@/types/chat";
 import { AirportScoreCard } from "@/components/airport/AirportScoreCard";
 import { AirportComparison } from "@/components/airport/AirportComparison";
@@ -13,18 +13,20 @@ import { ScoringMethodologyCard } from "@/components/airport/ScoringMethodologyC
 import { useSpeechOutput } from "@/hooks/useSpeechOutput";
 import { blocksToSpeakableText } from "@/services/speak";
 import { Button } from "@/components/ui/button";
+import { cn } from "cn";
 import { useState, useEffect } from "react";
 
 interface BlockViewProps {
   block: Block;
   onSend?: (text: string) => void;
+  isFirst?: boolean;
 }
 
-function BlockView({ block, onSend }: BlockViewProps) {
+function BlockView({ block, onSend, isFirst }: BlockViewProps) {
   switch (block.kind) {
     case "text":
       return (
-        <div className="mt-2 text-foreground">
+        <div className={cn("text-foreground", !isFirst && "mt-2")}>
           <p className="whitespace-pre-wrap">{block.text}</p>
         </div>
       );
@@ -57,44 +59,110 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ blocks, onSend }: ChatMessageProps) {
-  const { supported: ttsSupported, speaking, loading, speak, cloudAvailable } = useSpeechOutput();
+  const {
+    supported: ttsSupported,
+    loading,
+    playbackPhase,
+    speak,
+    pause,
+    resume,
+    restart,
+    stop,
+    cloudAvailable,
+  } = useSpeechOutput();
   const [ttsError, setTtsError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!speaking && !loading) {
+    if (playbackPhase === "idle" || playbackPhase === "ended") {
       setTtsError(null);
     }
-  }, [speaking, loading]);
+  }, [playbackPhase]);
 
-  const handleSpeak = async () => {
-    const fullReportText = blocksToSpeakableText(blocks);
+  const fullReportText = blocksToSpeakableText(blocks);
+
+  const handlePlayPause = async () => {
+    if (playbackPhase === "playing") {
+      pause();
+      return;
+    }
+    if (playbackPhase === "paused") {
+      await resume();
+      return;
+    }
     const result = await speak(fullReportText);
     if (!result.ok) {
       setTtsError(result.error);
     }
   };
 
-  const hasSpeakableContent = blocks.length > 0 && blocks.some(b => b.kind !== "confirmation");
+  const handleRestart = () => {
+    void restart();
+  };
+
+  const handleStop = () => {
+    stop();
+  };
+
+  const hasSpeakableContent = blocks.length > 0 && blocks.some((b) => b.kind !== "confirmation");
+  const showPlaybackControls =
+    playbackPhase === "loading" || playbackPhase === "playing" || playbackPhase === "paused";
+
+  const mainControlLabel =
+    loading
+      ? "Loading audio"
+      : playbackPhase === "playing"
+        ? "Pause report"
+        : playbackPhase === "paused"
+          ? "Resume report"
+          : playbackPhase === "ended"
+            ? "Play report again"
+            : "Read full report";
+
+  const showSpeakControl = ttsSupported && hasSpeakableContent;
 
   return (
-    <div className="flex flex-col gap-4 pt-1">
-      {ttsSupported && hasSpeakableContent && (
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-2">
-            {cloudAvailable === false && (
-              <span className="text-[10px] text-ink-muted font-mono uppercase">Using browser voice</span>
+    <div className={cn("relative flex flex-col gap-4", showSpeakControl && "pr-[7.5rem]")}>
+      {showSpeakControl && (
+        <div className="absolute right-0 top-0 z-10 flex flex-col items-end gap-1">
+          {cloudAvailable === false && (
+            <span className="text-[10px] text-ink-muted font-mono uppercase">Using browser voice</span>
+          )}
+          <div className="flex items-center gap-0.5">
+            {showPlaybackControls && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  onClick={handleRestart}
+                  disabled={loading}
+                  aria-label="Restart report"
+                  className="rounded-none"
+                >
+                  <RotateCcw size={14} />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  onClick={handleStop}
+                  aria-label="Stop report"
+                  className="rounded-none"
+                >
+                  <Square size={14} />
+                </Button>
+              </>
             )}
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              onClick={handleSpeak}
-              disabled={speaking || loading}
-              aria-label="Read full report"
-              className="rounded-none font-mono text-xs uppercase"
+              size="icon-sm"
+              onClick={handlePlayPause}
+              disabled={loading}
+              aria-label={mainControlLabel}
+              className="rounded-none"
             >
-              <Volume2 size={14} />
-              {loading ? "Loading audio..." : speaking ? "Reading..." : "Read full report"}
+              {playbackPhase === "playing" ? <Pause size={14} /> : <Play size={14} />}
             </Button>
           </div>
           {ttsError && (
@@ -102,12 +170,13 @@ export function ChatMessage({ blocks, onSend }: ChatMessageProps) {
           )}
         </div>
       )}
-      
+
       {blocks.map((block, i) => (
-        <BlockView 
-          key={i} 
-          block={block} 
+        <BlockView
+          key={i}
+          block={block}
           onSend={onSend}
+          isFirst={i === 0}
         />
       ))}
     </div>

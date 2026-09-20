@@ -22,7 +22,12 @@ vi.mock("@/hooks/useSpeechOutput", () => ({
     supported: true,
     speaking: false,
     loading: false,
+    playbackPhase: "idle" as const,
     speak: vi.fn().mockResolvedValue({ ok: true }),
+    pause: vi.fn(),
+    resume: vi.fn().mockResolvedValue(undefined),
+    restart: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn(),
     cancel: vi.fn(),
     cloudAvailable: true,
   }),
@@ -75,18 +80,31 @@ describe("Airport evidence UI", () => {
     expect(screen.getByText(/TOP OPP/i)).toBeInTheDocument();
   });
 
-  it("renders ranking list", () => {
+  it("renders ranking list and truncates to top 4", () => {
+    const scores = [
+      mockAirportScore({ airport_code: "A" }),
+      mockAirportScore({ airport_code: "B" }),
+      mockAirportScore({ airport_code: "C" }),
+      mockAirportScore({ airport_code: "D" }),
+      mockAirportScore({ airport_code: "E" }),
+      mockAirportScore({ airport_code: "F" }),
+    ];
+    
     render(
       <RankingTable
         kind="ranking"
-        ranked={[mockAirportScore(), mockAirportScore({ airport_code: "JFK" })]}
+        ranked={scores}
         region="new_england"
         peerNote="Peer set note"
         metric="opportunity_score"
       />,
     );
     expect(screen.getByText(/new england/i)).toBeInTheDocument();
-    expect(screen.getByText(/Ranked by opportunity score/i)).toBeInTheDocument();
+    expect(screen.getByText(/Top 4 of 6 airports · ranked by opportunity score/i)).toBeInTheDocument();
+    
+    // Only 4 items should be rendered
+    const listItems = screen.getAllByRole("listitem");
+    expect(listItems).toHaveLength(4);
   });
 
   it("renders simulation delta", () => {
@@ -169,9 +187,9 @@ describe("Airport evidence UI", () => {
     expect(onSelect).toHaveBeenCalledWith("BOS");
   });
 
-  it("renders Read full report but not per-block Read aloud", () => {
+  it("renders speak control but not per-block Read aloud", () => {
     render(<ChatMessage blocks={[{ kind: "text", text: "Some text" }]} />);
-    expect(screen.getByText(/Read full report/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Read full report/i })).toBeInTheDocument();
     expect(screen.queryByText(/Read aloud/i)).not.toBeInTheDocument();
   });
 

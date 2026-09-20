@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 920" role="img">
+  <rect width="1100" height="920" fill="#2b303b"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 1.5 L9 5 L0 8.5 z" fill="#9aa3ad"/>
+    </marker>
+  </defs>
+
+  <!-- Client -->
+  <rect x="390" y="28" width="320" height="196" rx="4" fill="#242830" stroke="#3d4450"/>
+  <text x="406" y="50" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#c5ccd4">Client</text>
+  <rect x="430" y="68" width="240" height="52" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="550" y="100" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" fill="#d8dee6">React Chat + structured cards</text>
+  <rect x="478" y="148" width="144" height="44" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="550" y="176" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" fill="#d8dee6">api.ts</text>
+  <line x1="550" y1="120" x2="550" y2="148" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+
+  <!-- FastAPI -->
+  <rect x="300" y="256" width="500" height="128" rx="4" fill="#242830" stroke="#3d4450"/>
+  <text x="316" y="278" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#c5ccd4">FastAPI</text>
+  <rect x="328" y="300" width="220" height="52" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="438" y="322" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">/api/airports/*</text>
+  <text x="438" y="340" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">/api/regions/*</text>
+  <rect x="568" y="300" width="200" height="52" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="668" y="332" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">POST /api/chat SSE</text>
+  <line x1="550" y1="192" x2="438" y2="300" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="550" y1="192" x2="668" y2="300" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+
+  <!-- Agent -->
+  <rect x="240" y="420" width="700" height="196" rx="4" fill="#242830" stroke="#3d4450"/>
+  <text x="256" y="442" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#c5ccd4">Agent</text>
+  <rect x="500" y="456" width="180" height="44" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="590" y="484" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" fill="#d8dee6">Orchestrator</text>
+  <rect x="268" y="536" width="160" height="48" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="348" y="566" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">Approved tools</text>
+  <rect x="448" y="536" width="248" height="48" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="572" y="566" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">LLM: choose_tools + respond_stream</text>
+  <rect x="716" y="536" width="200" height="48" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="816" y="566" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">Guardrails + session + scope</text>
+  <line x1="668" y1="352" x2="590" y2="456" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="590" y1="500" x2="348" y2="536" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="590" y1="500" x2="572" y2="536" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="590" y1="500" x2="816" y2="536" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+
+  <!-- Core -->
+  <rect x="80" y="652" width="640" height="236" rx="4" fill="#242830" stroke="#3d4450"/>
+  <text x="96" y="674" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#c5ccd4">Core</text>
+  <rect x="280" y="692" width="200" height="44" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="380" y="720" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" fill="#d8dee6">AnalysisService</text>
+  <rect x="108" y="772" width="220" height="44" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="218" y="800" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">Providers CompositeProvider</text>
+  <rect x="348" y="772" width="140" height="44" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="418" y="800" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">Analytics</text>
+  <rect x="508" y="772" width="180" height="44" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="598" y="800" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">Universe TTL snapshot</text>
+  <rect x="308" y="840" width="220" height="44" rx="4" fill="#3a414c" stroke="#4b5563"/>
+  <text x="418" y="868" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#d8dee6">Scoring expansion_score.py</text>
+
+  <line x1="438" y1="352" x2="380" y2="692" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="348" y1="584" x2="380" y2="692" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="380" y1="736" x2="218" y2="772" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="380" y1="736" x2="418" y2="772" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="380" y1="736" x2="598" y2="772" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="418" y1="816" x2="418" y2="840" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <line x1="348" y1="584" x2="598" y2="772" stroke="#9aa3ad" stroke-width="1.2" opacity="0.7" marker-end="url(#a)"/>
+
+  <!-- SSE back to UI -->
+  <path d="M680 478 C 980 478, 1000 94, 670 94" fill="none" stroke="#9aa3ad" stroke-width="1.4" marker-end="url(#a)"/>
+  <rect x="860" y="300" width="200" height="36" rx="3" fill="#1f242c" stroke="#3d4450"/>
+  <text x="960" y="323" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#c5ccd4">SSE: phase, meta, delta, done</text>
+</svg>
