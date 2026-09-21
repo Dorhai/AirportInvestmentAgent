@@ -1,16 +1,14 @@
 # AirportIQ
 
-Ask questions about **US airport expansion pressure** in plain language. You get score cards and rankings first, then a short explanation. All numbers come from **Python and public aviation data**—the AI helps you ask and explains results; it does not invent scores.
+Ask questions about **US airport expansion pressure** in plain language. You get score cards and rankings first, then a short explanation. All numbers come from **Python and public aviation data**. The AI helps you ask and explains results. It does not invent scores.
 
 ## About the project
 
-AirportIQ is a small demo app for analysts and investors who want a quick read on demand, congestion, delays, and capacity **pressure** at supported US airports (e.g. BOS, JFK, LAX). Chat is optional; the same scores are available from the REST API without the LLM.
+AirportIQ is a small demo app for analysts and investors who want a quick read on demand, congestion, delays, and capacity **pressure** at supported US airports. Chat is optional. The same scores are available from the REST API without the LLM.
 
 <p align="center">
   <img src="docs/assets/airportiq-architecture.png" alt="AirportIQ architecture: web app, API, AI assistant, Python analytics" width="1200" />
 </p>
-
-**Flow in one line:** You -> web app -> API -> AI picks tools -> Python fetches data and scores -> cards + explanation.
 
 ## Install and run
 
@@ -41,19 +39,9 @@ AirportIQ is a small demo app for analysts and investors who want a quick read o
 
 **Optional:** Put BTS CSV files under `backend/data/` and set paths in `.env` for richer delay and long-haul metrics. See [`.env.example`](.env.example).
 
-## Try it
-
-Example questions:
-
-- "What's the expansion opportunity score at Logan?"
-- "Compare BOS and JFK."
-- "Rank airports in New England by opportunity."
-
-Regions for ranking: `new_england`, `west_coast`, `alaska`, `northeast`, `california`.
-
 ## Learn more
 
-- [docs/architecture.md](docs/architecture.md) — design, scoring, guardrails
-- [docs/README.md](docs/README.md) — full documentation index
+[docs/architecture.md](docs/architecture.md): design, scoring, guardrails  
+[docs/README.md](docs/README.md): full documentation index
 
 Scores describe operational **pressure**, not financial ROI. Not investment advice.
