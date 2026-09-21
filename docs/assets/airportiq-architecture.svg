@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 1020" role="img" aria-label="AirportIQ architecture">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 1380" role="img" aria-label="AirportIQ architecture">
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#8ec5f0"/>
     </marker>
     <style>
@@ -19,19 +19,19 @@
   </defs>
   <rect width="100%" height="100%" fill="#1a2030"/>
 
-  <g transform="translate(250, 28)">
+  <g transform="translate(310, 56)">
     <rect class="box" width="380" height="136" rx="2"/>
     <text x="190" y="52" class="title" text-anchor="middle">Web app</text>
     <text x="190" y="90" class="sub" text-anchor="middle">Chat · voice · score cards</text>
   </g>
 
-  <g transform="translate(490, 292)">
+  <g transform="translate(620, 440)">
     <rect class="box" width="380" height="140" rx="2"/>
     <text x="190" y="52" class="title" text-anchor="middle">API server</text>
     <text x="190" y="90" class="sub" text-anchor="middle">Chat endpoint · airport data endpoints</text>
   </g>
 
-  <g transform="translate(50, 580)">
+  <g transform="translate(56, 820)">
     <rect class="box" width="380" height="140" rx="2"/>
     <text x="190" y="52" class="title" text-anchor="middle">AI assistant</text>
     <text class="sub" text-anchor="middle">
@@ -40,7 +40,7 @@
     </text>
   </g>
 
-  <g transform="translate(490, 848)">
+  <g transform="translate(620, 1180)">
     <rect class="box" width="380" height="140" rx="2"/>
     <text x="190" y="52" class="title" text-anchor="middle">Python analytics</text>
     <text class="sub" text-anchor="middle">
@@ -49,24 +49,24 @@
     </text>
   </g>
 
-  <path class="edge" d="M 440 164 L 440 236 L 680 236 L 680 292"/>
-  <text class="edge-label" x="560" y="226">1 You ask a question</text>
+  <path class="edge" d="M 500 192 L 500 360 L 810 360 L 810 440"/>
+  <text class="edge-label" x="655" y="350">1 You ask a question</text>
 
-  <path class="edge" d="M 490 362 L 430 362 L 430 560 L 240 560 L 240 580"/>
-  <text class="edge-label" x="430" y="350">2 Chat goes to AI</text>
+  <path class="edge" d="M 620 510 L 520 510 L 520 800 L 246 800 L 246 820"/>
+  <text class="edge-label" x="520" y="498">2 Chat goes to AI</text>
 
-  <path class="edge" d="M 240 720 L 240 784 L 680 784 L 680 848"/>
-  <text class="edge-label" x="420" y="774">3 Python fetches data and scores</text>
+  <path class="edge" d="M 246 960 L 246 1070 L 810 1070 L 810 1180"/>
+  <text class="edge-label" x="528" y="1060">3 Python fetches data and scores</text>
 
-  <path class="edge" d="M 490 918 L 56 918 L 56 650 L 50 650"/>
-  <text class="edge-label" x="130" y="908">4 Scores and tables to AI</text>
+  <path class="edge" d="M 620 1250 L 48 1250 L 48 890 L 56 890"/>
+  <text class="edge-label" x="140" y="1240">4 Scores and tables to AI</text>
 
-  <path class="edge" d="M 130 580 L 130 164 L 320 164"/>
-  <text class="edge-label" x="130" y="372">5 Cards and explanation</text>
+  <path class="edge" d="M 116 820 L 116 192 L 310 192"/>
+  <text class="edge-label" x="116" y="506">5 Cards and explanation</text>
 
-  <path class="edge" d="M 790 432 L 790 848"/>
-  <text class="edge-label" x="790" y="640">Airport score API · skips AI</text>
+  <path class="edge" d="M 880 580 L 880 1180"/>
+  <text class="edge-label" x="880" y="880">Airport score API · skips AI</text>
 
-  <path class="edge-dashed" d="M 870 918 L 944 918 L 944 362 L 870 362"/>
-  <text class="edge-label" x="944" y="640">JSON only</text>
+  <path class="edge-dashed" d="M 1000 1250 L 1160 1250 L 1160 510 L 1000 510"/>
+  <text class="edge-label" x="1160" y="880">JSON only</text>
 </svg>
